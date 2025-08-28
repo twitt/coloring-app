@@ -48,11 +48,12 @@
   .app-header {
     background: rgba(255,255,255,0.95);
     backdrop-filter: blur(20px);
-    padding: 12px 16px 8px;
+    padding: 16px 16px 12px; /* Increased top padding to prevent shadow cutoff */
     border-bottom: 1px solid rgba(255,255,255,0.2);
     box-shadow: var(--shadow);
     position: relative;
     z-index: 100;
+    overflow: visible; /* Allow shadows to show */
   }
   
   .app-title {
@@ -63,7 +64,7 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    margin: 0 0 8px;
+    margin: 0 0 12px; /* Increased margin */
     letter-spacing: -0.5px;
   }
   
@@ -73,9 +74,10 @@
     align-items: center; 
     flex-wrap: nowrap;
     overflow-x: auto;
-    padding: 0 4px;
+    padding: 4px; /* Added padding to prevent shadow cutoff */
     scrollbar-width: none;
     -ms-overflow-style: none;
+    margin: -4px; /* Negative margin to compensate for padding */
   }
   
   #toolbar::-webkit-scrollbar { display: none; }
@@ -181,6 +183,7 @@
     border-top: 1px solid rgba(255,255,255,0.2);
     position: relative;
     z-index: 90;
+    flex-shrink: 0; /* Prevent shrinking */
   }
   
   .section-title {
@@ -241,16 +244,20 @@
   
   #stampSelector { 
     display: none; 
-    flex-wrap: wrap; 
-    justify-content: center; 
-    gap: 8px; 
     padding: 8px 16px 16px;
-    max-height: 140px;
+    max-height: 150px; /* Fixed height */
     overflow-y: auto;
     scrollbar-width: thin;
   }
   
-  #stampSelector.visible { display: flex; }
+  #stampSelector.visible { display: block; }
+  
+  #stampGrid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
   
   .stamp { 
     width: 52px; 
@@ -268,6 +275,7 @@
     transition: var(--transition);
     position: relative;
     overflow: hidden;
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
   }
   
   .stamp:before {
@@ -349,7 +357,8 @@
   
   /* Enhanced mobile responsiveness */
   @media (max-width: 768px) {
-    .app-title { font-size: 16px; }
+    .app-header { padding: 12px 12px 8px; }
+    .app-title { font-size: 16px; margin-bottom: 8px; }
     
     #toolbar button {
       font-size: 12px;
@@ -386,12 +395,13 @@
   }
   
   @media (max-width: 480px) {
-    .app-header { padding: 8px 12px 6px; }
+    .app-header { padding: 10px 8px 6px; }
     .app-title { font-size: 15px; margin-bottom: 6px; }
     
     #toolbar {
       gap: 6px;
-      padding: 0 2px;
+      padding: 2px;
+      margin: -2px;
     }
     
     #toolbar button {
@@ -427,7 +437,8 @@
     }
     
     .section-title { font-size: 13px; padding: 8px 12px 6px; }
-    #palette, #stampSelector { gap: 6px; padding: 6px 12px 12px; }
+    #palette { gap: 6px; padding: 6px 12px 12px; }
+    #stampSelector { padding: 6px 12px 12px; }
     
     .size-control { padding: 8px 12px; }
     .size-label, .size-value { font-size: 13px; }
@@ -435,7 +446,7 @@
   
   /* Landscape mobile optimization */
   @media (max-height: 500px) and (orientation: landscape) {
-    .app-header { padding: 6px 12px 4px; }
+    .app-header { padding: 8px 12px 4px; }
     .app-title { font-size: 14px; margin-bottom: 4px; }
     
     #toolbar button {
@@ -728,13 +739,27 @@
     return [parseInt(hex.substr(0, 2), 16), parseInt(hex.substr(2, 2), 16), parseInt(hex.substr(4, 2), 16), 255];
   }
 
+  // Fixed stamp placement function
   function placeStamp(x, y) {
     const pctx = paintLayer.getContext('2d');
-    pctx.font = (size * 2) + 'px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", Arial, sans-serif';
+    
+    // Save current composite operation
+    const prevComposite = pctx.globalCompositeOperation;
+    
+    // Use source-over to ensure emoji appears on top
+    pctx.globalCompositeOperation = 'source-over';
+    
+    // Set font and styling
+    pctx.font = (size * 2) + 'px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", system-ui, sans-serif';
     pctx.textAlign = 'center';
     pctx.textBaseline = 'middle';
-    pctx.fillStyle = color;
+    
+    // For emojis, we don't use fillStyle as they are colored by default
+    // Just draw the emoji directly
     pctx.fillText(stampEmoji, x, y);
+    
+    // Restore previous composite operation
+    pctx.globalCompositeOperation = prevComposite;
   }
 
   function handleInputDown(e) {
@@ -850,7 +875,7 @@
     palette.appendChild(sw);
   });
 
-  // Plants vs Zombies themed stamps
+  // Plants vs Zombies themed stamps - organized in a grid
   const pvzStampEmojis = [
     // Plants
     '🌻', '🌱', '🌿', '🪴', '🌵', '🌲', '🌳', '🥦',
@@ -860,12 +885,10 @@
     '🧟', '💀', '👻', '🎃', '🦴', '🧠', '⚰️', '🔮',
     
     // Game Elements
-    '☀️', '💎', '⚡', '💥', '🌟', '💫', '🔥', '❄️',
-    '🌪️', '🌈', '⭐', '✨', '💯', '🎯', '🏆', '🎖️'
+    '☀️', '💎', '⚡', '💥', '🌟', '💫', '🔥', '❄️'
   ];
   
   const stampGrid = document.getElementById('stampGrid');
-  const stampSelector = document.getElementById('stampSelector');
   
   // Create stamps grid
   pvzStampEmojis.forEach((emoji, index) => {
@@ -881,9 +904,6 @@
     };
     stampGrid.appendChild(stamp);
   });
-  
-  // Move the stamps grid into the selector
-  stampSelector.appendChild(stampGrid);
 
   // Resize handling
   window.addEventListener('resize', () => {
