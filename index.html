@@ -35,7 +35,7 @@
     display: flex; 
     flex-direction: column; 
     height: 100vh; 
-    height: 100dvh; /* Dynamic viewport height for mobile */
+    height: 100dvh;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     touch-action: manipulation;
@@ -48,12 +48,12 @@
   .app-header {
     background: rgba(255,255,255,0.95);
     backdrop-filter: blur(20px);
-    padding: 16px 16px 12px; /* Increased top padding to prevent shadow cutoff */
+    padding: 16px 16px 12px;
     border-bottom: 1px solid rgba(255,255,255,0.2);
     box-shadow: var(--shadow);
     position: relative;
     z-index: 100;
-    overflow: visible; /* Allow shadows to show */
+    overflow: visible;
   }
   
   .app-title {
@@ -64,7 +64,7 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    margin: 0 0 12px; /* Increased margin */
+    margin: 0 0 12px;
     letter-spacing: -0.5px;
   }
   
@@ -74,10 +74,10 @@
     align-items: center; 
     flex-wrap: nowrap;
     overflow-x: auto;
-    padding: 4px; /* Added padding to prevent shadow cutoff */
+    padding: 4px;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    margin: -4px; /* Negative margin to compensate for padding */
+    margin: -4px;
   }
   
   #toolbar::-webkit-scrollbar { display: none; }
@@ -160,6 +160,11 @@
     overflow: hidden;
     position: relative;
     padding: 16px;
+    cursor: grab;
+  }
+  
+  #canvasWrap.dragging {
+    cursor: grabbing;
   }
   
   canvas { 
@@ -168,9 +173,8 @@
     border-radius: var(--radius);
     box-shadow: var(--shadow-hover);
     transition: var(--transition);
-    max-width: calc(100vw - 32px);
-    max-height: calc(100vh - 280px);
-    max-height: calc(100dvh - 280px);
+    transform-origin: center;
+    position: relative;
   }
   
   canvas:hover {
@@ -183,7 +187,7 @@
     border-top: 1px solid rgba(255,255,255,0.2);
     position: relative;
     z-index: 90;
-    flex-shrink: 0; /* Prevent shrinking */
+    flex-shrink: 0;
   }
   
   .section-title {
@@ -196,6 +200,65 @@
     opacity: 0.8;
   }
   
+  /* Zoom controls */
+  .zoom-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+    background: rgba(255,255,255,0.7);
+    border-bottom: 1px solid rgba(255,255,255,0.3);
+  }
+  
+  .zoom-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transition: var(--transition);
+  }
+  
+  .zoom-btn:hover {
+    transform: scale(1.1);
+    box-shadow: var(--shadow-hover);
+  }
+  
+  .zoom-info {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--dark);
+    min-width: 60px;
+    text-align: center;
+  }
+  
+  .reset-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: var(--radius);
+    background: var(--secondary);
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  
+  .reset-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-hover);
+  }
+  
   #palette { 
     display: flex; 
     flex-wrap: wrap; 
@@ -203,6 +266,11 @@
     gap: 8px; 
     padding: 8px 16px 16px;
     overflow-x: auto;
+    transition: var(--transition);
+  }
+  
+  #palette.hidden {
+    display: none;
   }
   
   .swatch { 
@@ -245,7 +313,7 @@
   #stampSelector { 
     display: none; 
     padding: 8px 16px 16px;
-    max-height: 150px; /* Fixed height */
+    max-height: 150px;
     overflow-y: auto;
     scrollbar-width: thin;
   }
@@ -373,11 +441,6 @@
       min-width: 80px;
     }
     
-    canvas {
-      max-height: calc(100vh - 320px);
-      max-height: calc(100dvh - 320px);
-    }
-    
     .swatch {
       width: 40px;
       height: 40px;
@@ -391,6 +454,17 @@
     
     #stampSelector {
       max-height: 120px;
+    }
+    
+    .zoom-btn {
+      width: 36px;
+      height: 36px;
+      font-size: 16px;
+    }
+    
+    .zoom-controls {
+      padding: 6px 12px;
+      gap: 8px;
     }
   }
   
@@ -419,12 +493,6 @@
     
     #canvasWrap { padding: 12px; }
     
-    canvas {
-      max-width: calc(100vw - 24px);
-      max-height: calc(100vh - 340px);
-      max-height: calc(100dvh - 340px);
-    }
-    
     .swatch {
       width: 36px;
       height: 36px;
@@ -442,6 +510,27 @@
     
     .size-control { padding: 8px 12px; }
     .size-label, .size-value { font-size: 13px; }
+    
+    .zoom-btn {
+      width: 32px;
+      height: 32px;
+      font-size: 14px;
+    }
+    
+    .zoom-controls {
+      padding: 4px 8px;
+      gap: 6px;
+    }
+    
+    .zoom-info {
+      font-size: 12px;
+      min-width: 50px;
+    }
+    
+    .reset-btn {
+      padding: 6px 12px;
+      font-size: 11px;
+    }
   }
   
   /* Landscape mobile optimization */
@@ -457,11 +546,6 @@
     
     #fileInput { min-height: 32px; }
     
-    canvas {
-      max-height: calc(100vh - 200px);
-      max-height: calc(100dvh - 200px);
-    }
-    
     .section-title { padding: 6px 12px 4px; font-size: 12px; }
     #palette, #stampSelector { padding: 4px 12px 8px; }
     .swatch { width: 32px; height: 32px; }
@@ -469,6 +553,9 @@
     
     #stampSelector { max-height: 80px; }
     .size-control { padding: 6px 12px; }
+    
+    .zoom-controls { padding: 2px 8px; }
+    .zoom-btn { width: 28px; height: 28px; font-size: 12px; }
   }
   
   /* Loading animation */
@@ -513,14 +600,23 @@
 </div>
 
 <div class="controls-section">
+  <div class="zoom-controls">
+    <button class="zoom-btn" id="zoomOut">-</button>
+    <span class="zoom-info" id="zoomLevel">100%</span>
+    <button class="zoom-btn" id="zoomIn">+</button>
+    <button class="reset-btn" id="resetZoom">Reset View</button>
+  </div>
+  
   <div class="size-control">
     <span class="size-label">Brush Size:</span>
     <input type="range" id="sizeSlider" min="5" max="50" value="24">
     <span class="size-value" id="sizeValue">24</span>
   </div>
   
-  <h3 class="section-title">🎨 Color Palette</h3>
-  <div id="palette"></div>
+  <div id="paletteSection">
+    <h3 class="section-title">🎨 Color Palette</h3>
+    <div id="palette"></div>
+  </div>
   
   <div id="stampSelector">
     <h3 class="section-title">🌱 PvZ Characters & Elements</h3>
@@ -530,40 +626,70 @@
 
 <script>
 (() => {
-  // Canvas setup with perfect mobile sizing
+  // Canvas setup with zoom and pan functionality
   const canvas = document.getElementById('paint');
   const ctx = canvas.getContext('2d');
   const paintLayer = document.createElement('canvas');
   const lineLayer = document.createElement('canvas');
+  const canvasWrap = document.getElementById('canvasWrap');
   
-  // Responsive canvas sizing
-  function resizeCanvas() {
-    const container = document.getElementById('canvasWrap');
-    const containerRect = container.getBoundingClientRect();
-    const maxWidth = containerRect.width - 32;
-    const maxHeight = containerRect.height - 32;
-    
-    // Set canvas size based on device
-    const isPortrait = window.innerHeight > window.innerWidth;
-    const isMobile = window.innerWidth <= 768;
-    
-    if (isMobile) {
-      if (isPortrait) {
-        canvas.width = Math.min(maxWidth, 600);
-        canvas.height = Math.min(maxHeight, 800);
-      } else {
-        canvas.width = Math.min(maxWidth, 800);
-        canvas.height = Math.min(maxHeight, 500);
-      }
-    } else {
-      canvas.width = Math.min(maxWidth, 800);
-      canvas.height = Math.min(maxHeight, 600);
-    }
-    
+  // Zoom and pan variables
+  let zoom = 1;
+  let panX = 0;
+  let panY = 0;
+  let isPanning = false;
+  let lastPanX = 0;
+  let lastPanY = 0;
+  
+  // Canvas size variables
+  let baseCanvasWidth = 800;
+  let baseCanvasHeight = 600;
+  
+  function updateCanvasSize() {
+    canvas.width = baseCanvasWidth;
+    canvas.height = baseCanvasHeight;
     paintLayer.width = lineLayer.width = canvas.width;
     paintLayer.height = lineLayer.height = canvas.height;
     
+    // Apply zoom and pan transforms
+    canvas.style.transform = `scale(${zoom}) translate(${panX}px, ${panY}px)`;
+    
     render();
+  }
+  
+  function updateZoomDisplay() {
+    document.getElementById('zoomLevel').textContent = Math.round(zoom * 100) + '%';
+  }
+  
+  function fitImageToCanvas() {
+    if (!uploadedImage) return;
+    
+    // Calculate the container size
+    const containerRect = canvasWrap.getBoundingClientRect();
+    const maxWidth = containerRect.width - 32;
+    const maxHeight = containerRect.height - 32;
+    
+    // Set canvas size to match image aspect ratio but fit in container
+    const imageAspect = uploadedImage.width / uploadedImage.height;
+    const containerAspect = maxWidth / maxHeight;
+    
+    if (imageAspect > containerAspect) {
+      // Image is wider - fit to width
+      baseCanvasWidth = Math.min(maxWidth, uploadedImage.width);
+      baseCanvasHeight = baseCanvasWidth / imageAspect;
+    } else {
+      // Image is taller - fit to height
+      baseCanvasHeight = Math.min(maxHeight, uploadedImage.height);
+      baseCanvasWidth = baseCanvasHeight * imageAspect;
+    }
+    
+    // Reset zoom and pan
+    zoom = 1;
+    panX = 0;
+    panY = 0;
+    
+    updateCanvasSize();
+    updateZoomDisplay();
   }
 
   let tool = 'brush';
@@ -593,7 +719,6 @@
       pctx.putImageData(img, 0, 0);
       render();
       
-      // Success feedback
       document.getElementById('undoBtn').classList.add('success-feedback');
       setTimeout(() => document.getElementById('undoBtn').classList.remove('success-feedback'), 300);
     }
@@ -607,7 +732,6 @@
       pctx.putImageData(img, 0, 0);
       render();
       
-      // Success feedback
       document.getElementById('redoBtn').classList.add('success-feedback');
       setTimeout(() => document.getElementById('redoBtn').classList.remove('success-feedback'), 300);
     }
@@ -619,7 +743,8 @@
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     if (uploadedImage) {
-      ctx.drawImage(uploadedImage, imgOffsetX, imgOffsetY, uploadedImage.width * imgScale, uploadedImage.height * imgScale);
+      // Draw image to fill entire canvas
+      ctx.drawImage(uploadedImage, 0, 0, canvas.width, canvas.height);
     }
     
     ctx.drawImage(paintLayer, 0, 0);
@@ -628,11 +753,11 @@
 
   function toCanvasCoords(clientX, clientY) {
     const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
+    const scaleX = canvas.width / (rect.width / zoom);
+    const scaleY = canvas.height / (rect.height / zoom);
     return {
-      x: Math.round((clientX - rect.left) * scaleX),
-      y: Math.round((clientY - rect.top) * scaleY)
+      x: Math.round(((clientX - rect.left) / zoom - panX) * scaleX),
+      y: Math.round(((clientY - rect.top) / zoom - panY) * scaleY)
     };
   }
 
@@ -659,7 +784,7 @@
     if (tool === 'brush' || tool === 'eraser') {
       const pctx = paintLayer.getContext('2d');
       pctx.lineJoin = pctx.lineCap = 'round';
-      pctx.lineWidth = size;
+      pctx.lineWidth = size / zoom; // Adjust brush size for zoom
       
       if (tool === 'eraser') {
         pctx.globalCompositeOperation = 'destination-out';
@@ -694,7 +819,7 @@
     tempCtx.fillStyle = '#fff';
     tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
     if (uploadedImage) {
-      tempCtx.drawImage(uploadedImage, imgOffsetX, imgOffsetY, uploadedImage.width * imgScale, uploadedImage.height * imgScale);
+      tempCtx.drawImage(uploadedImage, 0, 0, canvas.width, canvas.height);
     }
     tempCtx.drawImage(paintLayer, 0, 0);
     
@@ -739,42 +864,78 @@
     return [parseInt(hex.substr(0, 2), 16), parseInt(hex.substr(2, 2), 16), parseInt(hex.substr(4, 2), 16), 255];
   }
 
-  // Fixed stamp placement function
   function placeStamp(x, y) {
     const pctx = paintLayer.getContext('2d');
-    
-    // Save current composite operation
     const prevComposite = pctx.globalCompositeOperation;
     
-    // Use source-over to ensure emoji appears on top
     pctx.globalCompositeOperation = 'source-over';
-    
-    // Set font and styling
-    pctx.font = (size * 2) + 'px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", system-ui, sans-serif';
+    pctx.font = (size * 2 / zoom) + 'px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", system-ui, sans-serif';
     pctx.textAlign = 'center';
     pctx.textBaseline = 'middle';
-    
-    // For emojis, we don't use fillStyle as they are colored by default
-    // Just draw the emoji directly
     pctx.fillText(stampEmoji, x, y);
     
-    // Restore previous composite operation
     pctx.globalCompositeOperation = prevComposite;
+  }
+
+  // Pan and zoom functionality
+  function startPan(clientX, clientY) {
+    if (tool !== 'brush' && tool !== 'fill' && tool !== 'eraser' && tool !== 'stamp') return;
+    
+    isPanning = true;
+    lastPanX = clientX;
+    lastPanY = clientY;
+    canvasWrap.classList.add('dragging');
+  }
+
+  function updatePan(clientX, clientY) {
+    if (!isPanning) return;
+    
+    const deltaX = (clientX - lastPanX) / zoom;
+    const deltaY = (clientY - lastPanY) / zoom;
+    
+    panX += deltaX;
+    panY += deltaY;
+    
+    lastPanX = clientX;
+    lastPanY = clientY;
+    
+    canvas.style.transform = `scale(${zoom}) translate(${panX}px, ${panY}px)`;
+  }
+
+  function endPan() {
+    isPanning = false;
+    canvasWrap.classList.remove('dragging');
   }
 
   function handleInputDown(e) {
     e.preventDefault();
     const pt = getPt(e);
-    if (pt) beginStroke(pt.x, pt.y);
+    if (pt) {
+      if (e.ctrlKey || e.metaKey || (e.touches && e.touches.length > 1)) {
+        startPan(e.clientX || e.touches[0].clientX, e.clientY || e.touches[0].clientY);
+      } else {
+        beginStroke(pt.x, pt.y);
+      }
+    }
   }
 
   function handleInputMove(e) {
     e.preventDefault();
-    const pt = getPt(e);
-    if (pt) moveStroke(pt.x, pt.y);
+    if (isPanning) {
+      updatePan(e.clientX || e.touches[0].clientX, e.clientY || e.touches[0].clientY);
+    } else {
+      const pt = getPt(e);
+      if (pt) moveStroke(pt.x, pt.y);
+    }
+  }
+
+  function handleInputUp(e) {
+    endPan();
+    endStroke();
   }
 
   function getPt(e) {
+    if (isPanning) return null;
     if (e.touches && e.touches[0]) return toCanvasCoords(e.touches[0].clientX, e.touches[0].clientY);
     if (e.clientX != null) return toCanvasCoords(e.clientX, e.clientY);
     return null;
@@ -786,20 +947,62 @@
     document.getElementById('tool' + newTool.charAt(0).toUpperCase() + newTool.slice(1)).classList.add('active');
     
     const stampSelector = document.getElementById('stampSelector');
+    const paletteSection = document.getElementById('paletteSection');
+    
     if (tool === 'stamp') {
       stampSelector.classList.add('visible');
+      paletteSection.style.display = 'none'; // Hide color palette when stamping
     } else {
       stampSelector.classList.remove('visible');
+      paletteSection.style.display = 'block'; // Show color palette for other tools
     }
   }
+
+  // Zoom controls
+  document.getElementById('zoomIn').onclick = () => {
+    zoom = Math.min(zoom * 1.2, 5);
+    canvas.style.transform = `scale(${zoom}) translate(${panX}px, ${panY}px)`;
+    updateZoomDisplay();
+  };
+
+  document.getElementById('zoomOut').onclick = () => {
+    zoom = Math.max(zoom / 1.2, 0.1);
+    canvas.style.transform = `scale(${zoom}) translate(${panX}px, ${panY}px)`;
+    updateZoomDisplay();
+  };
+
+  document.getElementById('resetZoom').onclick = () => {
+    zoom = 1;
+    panX = 0;
+    panY = 0;
+    canvas.style.transform = `scale(${zoom}) translate(${panX}px, ${panY}px)`;
+    updateZoomDisplay();
+  };
+
+  // Wheel zoom
+  canvasWrap.addEventListener('wheel', e => {
+    e.preventDefault();
+    const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+    zoom = Math.max(0.1, Math.min(5, zoom * zoomFactor));
+    canvas.style.transform = `scale(${zoom}) translate(${panX}px, ${panY}px)`;
+    updateZoomDisplay();
+  });
 
   // Event listeners
   canvas.addEventListener('mousedown', handleInputDown);
   canvas.addEventListener('mousemove', handleInputMove);
-  window.addEventListener('mouseup', endStroke);
+  window.addEventListener('mouseup', handleInputUp);
   canvas.addEventListener('touchstart', handleInputDown, { passive: false });
   canvas.addEventListener('touchmove', handleInputMove, { passive: false });
-  canvas.addEventListener('touchend', endStroke);
+  canvas.addEventListener('touchend', handleInputUp);
+
+  // Right-click for panning
+  canvas.addEventListener('contextmenu', e => e.preventDefault());
+  canvas.addEventListener('mousedown', e => {
+    if (e.button === 2) { // Right click
+      startPan(e.clientX, e.clientY);
+    }
+  });
 
   document.getElementById('toolBrush').onclick = () => setTool('brush');
   document.getElementById('toolFill').onclick = () => setTool('fill');
@@ -814,7 +1017,6 @@
     link.href = canvas.toDataURL();
     link.click();
     
-    // Success feedback
     document.getElementById('saveBtn').classList.add('success-feedback');
     setTimeout(() => document.getElementById('saveBtn').classList.remove('success-feedback'), 300);
   };
@@ -827,18 +1029,16 @@
     const img = new Image();
     img.onload = () => {
       uploadedImage = img;
-      const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
-      imgScale = scale;
-      imgOffsetX = (canvas.width - img.width * scale) / 2;
-      imgOffsetY = (canvas.height - img.height * scale) / 2;
       
+      // Clear paint layer when loading new image
       const pctx = paintLayer.getContext('2d');
       pctx.clearRect(0, 0, paintLayer.width, paintLayer.height);
       
       const lctx = lineLayer.getContext('2d');
       lctx.clearRect(0, 0, lineLayer.width, lineLayer.height);
       
-      render();
+      // Fit canvas to image
+      fitImageToCanvas();
     };
     img.src = URL.createObjectURL(file);
   });
@@ -865,7 +1065,7 @@
     const sw = document.createElement('div');
     sw.className = 'swatch';
     sw.style.background = c;
-    if (index === 10) sw.classList.add('selected'); // Green default
+    if (index === 10) sw.classList.add('selected');
     
     sw.onclick = () => {
       palette.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
@@ -875,22 +1075,16 @@
     palette.appendChild(sw);
   });
 
-  // Plants vs Zombies themed stamps - organized in a grid
+  // Plants vs Zombies themed stamps
   const pvzStampEmojis = [
-    // Plants
     '🌻', '🌱', '🌿', '🪴', '🌵', '🌲', '🌳', '🥦',
     '🥕', '🥒', '🍅', '🫛', '🧅', '🥬', '🌶️', '🥔',
-    
-    // Zombies & Spooky
     '🧟', '💀', '👻', '🎃', '🦴', '🧠', '⚰️', '🔮',
-    
-    // Game Elements
     '☀️', '💎', '⚡', '💥', '🌟', '💫', '🔥', '❄️'
   ];
   
   const stampGrid = document.getElementById('stampGrid');
   
-  // Create stamps grid
   pvzStampEmojis.forEach((emoji, index) => {
     const stamp = document.createElement('div');
     stamp.className = 'stamp';
@@ -907,15 +1101,28 @@
 
   // Resize handling
   window.addEventListener('resize', () => {
-    setTimeout(resizeCanvas, 100);
+    setTimeout(() => {
+      if (uploadedImage) {
+        fitImageToCanvas();
+      } else {
+        updateCanvasSize();
+      }
+    }, 100);
   });
   
   window.addEventListener('orientationchange', () => {
-    setTimeout(resizeCanvas, 200);
+    setTimeout(() => {
+      if (uploadedImage) {
+        fitImageToCanvas();
+      } else {
+        updateCanvasSize();
+      }
+    }, 200);
   });
 
   // Initialize
-  resizeCanvas();
+  updateCanvasSize();
+  updateZoomDisplay();
   setTool('brush');
   render();
 })();
