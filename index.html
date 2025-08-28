@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mobile Coloring App</title>
+<style>
+  * { box-sizing: border-box; }
+  body { 
+    margin: 0; 
+    display: flex; 
+    flex-direction: column; 
+    height: 100vh; 
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    touch-action: manipulation;
+    background: #f0f0f0;
+  }
+  
+  #toolbar { 
+    flex: 0 0 auto; 
+    display: flex; 
+    gap: 6px; 
+    padding: 8px; 
+    background: #eee; 
+    align-items: center; 
+    flex-wrap: wrap;
+    overflow-x: auto;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  #toolbar button {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    font-size: 14px;
+    white-space: nowrap;
+    min-height: 44px;
+    transition: all 0.2s;
+  }
+  
+  #toolbar button:hover { background: #f5f5f5; transform: scale(1.02); }
+  #toolbar button.active { background: #007bff; color: white; box-shadow: 0 2px 4px rgba(0,123,255,0.3); }
+  
+  #fileInput {
+    padding: 8px;
+    font-size: 14px;
+    min-height: 44px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: white;
+  }
+  
+  #canvasWrap { 
+    flex: 1; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    background: #ccc; 
+    overflow: hidden;
+    position: relative;
+    padding: 10px;
+  }
+  
+  canvas { 
+    background: white; 
+    touch-action: none; 
+    max-width: 100%; 
+    max-height: 100%;
+    border: 3px solid #333;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  }
+  
+  #palette { 
+    flex: 0 0 auto; 
+    display: flex; 
+    flex-wrap: wrap; 
+    justify-content: center; 
+    gap: 4px; 
+    padding: 8px; 
+    background: #eee;
+    overflow-x: auto;
+    box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .swatch { 
+    width: 36px; 
+    height: 36px; 
+    border-radius: 50%; 
+    border: 2px solid #444; 
+    cursor: pointer; 
+    flex-shrink: 0;
+    min-width: 36px;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+  .swatch:hover { transform: scale(1.1); }
+  .swatch.selected { 
+    border-color: #007bff; 
+    border-width: 4px; 
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.3);
+  }
+  
+  #stampSelector { 
+    flex: 0 0 auto; 
+    display: none; 
+    flex-wrap: wrap; 
+    justify-content: center; 
+    gap: 4px; 
+    padding: 8px; 
+    background: #ddd;
+    max-height: 120px;
+    overflow-y: auto;
+    box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+  }
+  
+  #stampSelector.visible { display: flex; }
+  
+  .stamp { 
+    width: 44px; 
+    height: 44px; 
+    border-radius: 8px; 
+    border: 2px solid #666; 
+    cursor: pointer; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 24px; 
+    background: white;
+    flex-shrink: 0;
+    min-width: 44px;
+    min-height: 44px;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+  .stamp:hover { transform: scale(1.05); }
+  .stamp.selected { 
+    border-color: #007bff; 
+    background: #e7f3ff; 
+    border-width: 3px;
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.3);
+  }
+  
+  /* Mobile optimizations */
+  @media (max-width: 768px) {
+    body {
+      -webkit-text-size-adjust: 100%;
+      -webkit-font-smoothing: antialiased;
+    }
+    
+    #toolbar {
+      gap: 4px;
+      padding: 8px 4px;
+      justify-content: space-between;
+      min-height: 60px;
+    }
+    
+    #toolbar button {
+      padding: 8px 6px;
+      font-size: 14px;
+      min-height: 44px;
+      flex: 1;
+      min-width: 70px;
+      border-radius: 8px;
+    }
+    
+    #fileInput {
+      font-size: 14px;
+      padding: 8px;
+      min-height: 44px;
+      border-radius: 8px;
+    }
+    
+    .swatch {
+      width: 40px;
+      height: 40px;
+      min-width: 40px;
+      border-width: 3px;
+    }
+    
+    .stamp {
+      width: 48px;
+      height: 48px;
+      min-width: 48px;
+      min-height: 48px;
+      font-size: 26px;
+      border-width: 3px;
+      border-radius: 10px;
+    }
+    
+    #palette, #stampSelector {
+      padding: 10px;
+      gap: 6px;
+      min-height: 70px;
+    }
+    
+    #stampSelector {
+      max-height: 150px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    #toolbar {
+      flex-wrap: wrap;
+      gap: 3px;
+      padding: 6px 3px;
+    }
+    
+    #toolbar button {
+      font-size: 12px;
+      padding: 6px 4px;
+      min-width: 65px;
+      min-height: 40px;
+    }
+    
+    #fileInput {
+      font-size: 12px;
+      min-height: 40px;
+      flex: 1 1 100%;
+      margin-top: 3px;
+    }
+    
+    .swatch {
+      width: 36px;
+      height: 36px;
+      min-width: 36px;
+    }
+    
+    .stamp {
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      min-height: 44px;
+      font-size: 24px;
+    }
+  }
+  
+  /* iOS Safari specific fixes */
+  @supports (-webkit-touch-callout: none) {
+    body {
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    #toolbar button, .swatch, .stamp {
+      -webkit-appearance: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    .stamp {
+      font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+    }
+  }
+
+  /* Loading animation */
+  .loading {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+  }
+</style>
+</head>
+<body>
+<div id="toolbar">
+  <button id="toolBrush">✏️ Brush</button>
+  <button id="toolFill">🪣 Fill</button>
+  <button id="toolEraser">🩹 Eraser</button>
+  <button id="toolStamp">🖼️ Stamp</button>
+  <button id="undoBtn">↩️ Undo</button>
+  <button id="redoBtn">↪️ Redo</button>
+  <input type="file" id="fileInput" accept="image/*">
+  <button id="saveBtn">💾 Save</button>
+</div>
+<div id="canvasWrap">
+  <canvas id="paint" width="800" height="600"></canvas>
+</div>
+<div id="palette"></div>
+<div id="stampSelector"></div>
+<script>
+(() => {
+  const canvas = document.getElementById('paint');
+  const ctx = canvas.getContext('2d');
+  const paintLayer = document.createElement('canvas');
+  const lineLayer = document.createElement('canvas');
+  paintLayer.width=lineLayer.width=canvas.width;
+  paintLayer.height=lineLayer.height=canvas.height;
+
+  let tool='brush';
+  let color='#3fbf5f';
+  let size=24;
+  let isDrawing=false;
+  let last=null;
+  let stampEmoji='🌻';
+  let imgOffsetX=0, imgOffsetY=0, imgScale=1;
+  let uploadedImage=null;
+
+  // Undo/Redo stacks
+  const undoStack=[]; const redoStack=[];
+  function saveState(){
+    const pctx=paintLayer.getContext('2d');
+    undoStack.push(pctx.getImageData(0,0,paintLayer.width,paintLayer.height));
+    if(undoStack.length>30) undoStack.shift();
+    redoStack.length=0;
+  }
+  function undo(){
+    if(undoStack.length>0){
+      const pctx=paintLayer.getContext('2d');
+      redoStack.push(pctx.getImageData(0,0,paintLayer.width,paintLayer.height));
+      const img=undoStack.pop();
+      pctx.putImageData(img,0,0);
+      render();
+    }
+  }
+  function redo(){
+    if(redoStack.length>0){
+      const pctx=paintLayer.getContext('2d');
+      undoStack.push(pctx.getImageData(0,0,paintLayer.width,paintLayer.height));
+      const img=redoStack.pop();
+      pctx.putImageData(img,0,0);
+      render();
+    }
+  }
+
+  function render(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle='#fff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    // Draw uploaded image first (as background/outline)
+    if(uploadedImage){
+      ctx.drawImage(uploadedImage,imgOffsetX,imgOffsetY,uploadedImage.width*imgScale,uploadedImage.height*imgScale);
+    }
+    // Draw paint layer on top so we can color over the image
+    ctx.drawImage(paintLayer,0,0);
+    // Draw line layer on top for any additional outlines
+    ctx.drawImage(lineLayer,0,0);
+  }
+
+  function toCanvasCoords(clientX, clientY){
+    const rect=canvas.getBoundingClientRect();
+    const scaleX=canvas.width/rect.width;
+    const scaleY=canvas.height/rect.height;
+    return {
+      x:Math.round((clientX-rect.left)*scaleX),
+      y:Math.round((clientY-rect.top)*scaleY)
+    };
+  }
+
+  function beginStroke(x,y){
+    if(tool==='fill'){ saveState(); floodFill(x,y,color); render(); return; }
+    if(tool==='stamp'){ saveState(); placeStamp(x,y); render(); return; }
+    isDrawing=true; last={x,y};
+    if(tool==='brush'||tool==='eraser') saveState();
+  }
+  function moveStroke(x,y){
+    if(!isDrawing) return;
+    if(tool==='brush'||tool==='eraser'){
+      const pctx=paintLayer.getContext('2d');
+      pctx.lineJoin=pctx.lineCap='round';
+      pctx.lineWidth=size;
+      if(tool==='eraser'){ pctx.globalCompositeOperation='destination-out'; }
+      else { pctx.globalCompositeOperation='source-over'; pctx.strokeStyle=color; }
+      pctx.beginPath();
+      pctx.moveTo(last.x,last.y);
+      pctx.lineTo(x,y);
+      pctx.stroke();
+      last={x,y};
+      render();
+    }
+  }
+  function endStroke(){ isDrawing=false; last=null; }
+
+  function floodFill(x,y,hex){
+    const pctx=paintLayer.getContext('2d');
+    const base=pctx.getImageData(0,0,paintLayer.width,paintLayer.height);
+    
+    // Get combined image data (background image + paint layer) for flood fill detection
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = canvas.width;
+    tempCanvas.height = canvas.height;
+    const tempCtx = tempCanvas.getContext('2d');
+    
+    // Draw background image and paint layer to temp canvas
+    tempCtx.fillStyle='#fff'; 
+    tempCtx.fillRect(0,0,tempCanvas.width,tempCanvas.height);
+    if(uploadedImage){
+      tempCtx.drawImage(uploadedImage,imgOffsetX,imgOffsetY,uploadedImage.width*imgScale,uploadedImage.height*imgScale);
+    }
+    tempCtx.drawImage(paintLayer,0,0);
+    
+    const combined = tempCtx.getImageData(0,0,tempCanvas.width,tempCanvas.height);
+    const data=base.data, combinedData=combined.data;
+    const w=paintLayer.width;
+    const fill=hexToRgba(hex);
+    const targetIdx=(y*w+x)*4;
+    const orig=[combinedData[targetIdx],combinedData[targetIdx+1],combinedData[targetIdx+2],combinedData[targetIdx+3]];
+
+    const seen=new Uint8Array(w*paintLayer.height);
+    const stack=[[x,y]];
+    while(stack.length){
+      const [cx,cy]=stack.pop();
+      if(cx<0||cy<0||cx>=w||cy>=paintLayer.height) continue;
+      const i=(cy*w+cx)*4;
+      if(seen[cy*w+cx]) continue;
+      
+      // Check if we've hit a boundary (significant color difference)
+      if(!equalColor(combinedData.slice(i,i+4),orig)) continue;
+      
+      data[i]=fill[0]; data[i+1]=fill[1]; data[i+2]=fill[2]; data[i+3]=255;
+      seen[cy*w+cx]=1;
+      stack.push([cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]);
+    }
+    pctx.putImageData(base,0,0);
+  }
+  function equalColor(a,b){ 
+    // More lenient color matching for better fill behavior
+    const threshold = 30;
+    return Math.abs(a[0]-b[0]) <= threshold && 
+           Math.abs(a[1]-b[1]) <= threshold && 
+           Math.abs(a[2]-b[2]) <= threshold;
+  }
+  function hexToRgba(hex){ hex=hex.replace('#',''); if(hex.length===3) hex=hex.split('').map(c=>c+c).join('');
+    return [parseInt(hex.substr(0,2),16),parseInt(hex.substr(2,2),16),parseInt(hex.substr(4,2),16),255]; }
+
+  function placeStamp(x,y){
+    const pctx=paintLayer.getContext('2d');
+    // Better emoji rendering for iOS
+    pctx.font=(size*2)+'px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", Arial, sans-serif';
+    pctx.textAlign='center'; 
+    pctx.textBaseline='middle';
+    pctx.fillStyle = color; // Use current color for stamps
+    pctx.fillText(stampEmoji,x,y);
+  }
+
+  function handleInputDown(e){ 
+    e.preventDefault();
+    const pt=getPt(e); 
+    if(pt) beginStroke(pt.x,pt.y); 
+  }
+  function handleInputMove(e){ 
+    e.preventDefault();
+    const pt=getPt(e); 
+    if(pt) moveStroke(pt.x,pt.y); 
+  }
+  function getPt(e){
+    if(e.touches&&e.touches[0]) return toCanvasCoords(e.touches[0].clientX,e.touches[0].clientY);
+    if(e.clientX!=null) return toCanvasCoords(e.clientX,e.clientY);
+    return null;
+  }
+
+  // Tool selection UI update
+  function setTool(newTool) {
+    tool = newTool;
+    // Update button states
+    document.querySelectorAll('#toolbar button').forEach(btn => btn.classList.remove('active'));
+    document.getElementById('tool' + newTool.charAt(0).toUpperCase() + newTool.slice(1)).classList.add('active');
+    
+    // Show/hide stamp selector
+    const stampSelector = document.getElementById('stampSelector');
+    if (tool === 'stamp') {
+      stampSelector.classList.add('visible');
+    } else {
+      stampSelector.classList.remove('visible');
+    }
+  }
+
+  canvas.addEventListener('mousedown',handleInputDown);
+  canvas.addEventListener('mousemove',handleInputMove);
+  window.addEventListener('mouseup',endStroke);
+  canvas.addEventListener('touchstart',handleInputDown,{passive:false});
+  canvas.addEventListener('touchmove',handleInputMove,{passive:false});
+  canvas.addEventListener('touchend',endStroke);
+
+  document.getElementById('toolBrush').onclick=()=>setTool('brush');
+  document.getElementById('toolFill').onclick=()=>setTool('fill');
+  document.getElementById('toolEraser').onclick=()=>setTool('eraser');
+  document.getElementById('toolStamp').onclick=()=>setTool('stamp');
+  document.getElementById('undoBtn').onclick=undo;
+  document.getElementById('redoBtn').onclick=redo;
+  document.getElementById('saveBtn').onclick=()=>{
+    const link=document.createElement('a');
+    link.download='coloring.png';
+    link.href=canvas.toDataURL();
+    link.click();
+  };
+
+  document.getElementById('fileInput').addEventListener('change',e=>{
+    const file=e.target.files[0];
+    if(!file) return;
+    const img=new Image();
+    img.onload=()=>{
+      uploadedImage=img;
+      const scale=Math.min(canvas.width/img.width,canvas.height/img.height);
+      imgScale=scale;
+      imgOffsetX=(canvas.width-img.width*scale)/2;
+      imgOffsetY=(canvas.height-img.height*scale)/2;
+      
+      // Clear paint layer when loading new image
+      const pctx=paintLayer.getContext('2d');
+      pctx.clearRect(0,0,paintLayer.width,paintLayer.height);
+      
+      // Clear line layer
+      const lctx=lineLayer.getContext('2d');
+      lctx.clearRect(0,0,lineLayer.width,lineLayer.height);
+      
+      render();
+    };
+    img.src=URL.createObjectURL(file);
+  });
+
+  // Palette setup
+  const paletteColors=[
+    "#FF0000","#00FF00","#0000FF","#FFFF00","#FF00FF",
+    "#00FFFF","#FFA500","#800080","#008000","#000000",
+    "#FFFFFF","#808000","#00CED1","#C0C0C0","#A52A2A"
+  ];
+  const palette=document.getElementById('palette');
+  paletteColors.forEach((c, index) => {
+    const sw=document.createElement('div');
+    sw.className='swatch'; 
+    sw.style.background=c;
+    if (index === 0) sw.classList.add('selected'); // Select red by default
+    sw.onclick=()=>{
+      // Remove selected from all swatches
+      palette.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
+      // Add selected to clicked swatch
+      sw.classList.add('selected');
+      color=c;
+    };
+    palette.appendChild(sw);
+  });
+
+  // Stamp selector setup
+  const stampEmojis = [
+    '🌻', '🌸', '🌺', '🌷', '🌹', '🌼', '🌾',
+    '🦋', '🐝', '🐞', '🐛', '🐰', '🐸', '🐯',
+    '⭐', '🌟', '✨', '💫', '🌙', '☀️', '🌈',
+    '❤️', '💙', '💚', '💛', '💜', '🧡', '💖',
+    '🎈', '🎉', '🎊', '🎁', '🎂', '🍎', '🍌'
+  ];
+  const stampSelector = document.getElementById('stampSelector');
+  stampEmojis.forEach((emoji, index) => {
+    const stamp = document.createElement('div');
+    stamp.className = 'stamp';
+    if (index === 0) stamp.classList.add('selected'); // Select first emoji by default
+    stamp.textContent = emoji;
+    stamp.onclick = () => {
+      // Remove selected class from all stamps
+      stampSelector.querySelectorAll('.stamp').forEach(s => s.classList.remove('selected'));
+      // Add selected class to clicked stamp
+      stamp.classList.add('selected');
+      // Set the stamp emoji
+      stampEmoji = emoji;
+    };
+    stampSelector.appendChild(stamp);
+  });
+
+  // Initialize with brush tool
+  setTool('brush');
+  render();
+})();
+</script>
+</body>
+</html>
