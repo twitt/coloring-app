@@ -167,6 +167,27 @@
     cursor: grabbing;
   }
   
+  #canvasWrap.panning {
+    cursor: grabbing !important;
+  }
+  
+  /* Custom brush cursor */
+  #canvasWrap.brush-mode {
+    cursor: none;
+  }
+  
+  #canvasWrap.fill-mode {
+    cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17h20"/><path d="M12 22V12"/></svg>') 12 12, auto;
+  }
+  
+  #canvasWrap.eraser-mode {
+    cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 20H8l-4-4 9.172-9.172a4 4 0 015.656 0L20 8.828V20z"/></svg>') 12 12, auto;
+  }
+  
+  #canvasWrap.stamp-mode {
+    cursor: crosshair;
+  }
+  
   canvas { 
     background: white; 
     touch-action: none; 
@@ -179,6 +200,126 @@
   
   canvas:hover {
     box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+  }
+  
+  /* Brush indicator for desktop */
+  .brush-indicator {
+    position: absolute;
+    border: 2px solid rgba(0,0,0,0.5);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 1000;
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(2px);
+    display: none;
+    transform: translate(-50%, -50%);
+    transition: all 0.1s ease-out;
+  }
+  
+  .brush-indicator.visible {
+    display: block;
+  }
+  
+  .brush-indicator.brush {
+    border-color: var(--primary);
+    background: rgba(102, 126, 234, 0.1);
+  }
+  
+  .brush-indicator.eraser {
+    border-color: #ff4757;
+    background: rgba(255, 71, 87, 0.1);
+    border-style: dashed;
+  }
+  
+  /* Mobile touch indicator */
+  .touch-indicator {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    border: 3px solid rgba(102, 126, 234, 0.8);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 1001;
+    background: rgba(102, 126, 234, 0.1);
+    backdrop-filter: blur(4px);
+    display: none;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+  }
+  
+  .touch-indicator.visible {
+    display: block;
+    animation: touchPulse 0.3s ease-out;
+  }
+  
+  .touch-indicator.drawing {
+    animation: none;
+    border-color: rgba(102, 126, 234, 1);
+    background: rgba(102, 126, 234, 0.2);
+  }
+  
+  .touch-indicator.eraser {
+    border-color: rgba(255, 71, 87, 0.8);
+    background: rgba(255, 71, 87, 0.1);
+    box-shadow: 0 4px 20px rgba(255, 71, 87, 0.3);
+  }
+  
+  .touch-indicator.eraser.drawing {
+    border-color: rgba(255, 71, 87, 1);
+    background: rgba(255, 71, 87, 0.2);
+  }
+  
+  .touch-indicator.fill {
+    border-color: rgba(46, 213, 115, 0.8);
+    background: rgba(46, 213, 115, 0.1);
+    box-shadow: 0 4px 20px rgba(46, 213, 115, 0.3);
+    border-style: dotted;
+    border-width: 4px;
+  }
+  
+  .touch-indicator.stamp {
+    border-color: rgba(255, 165, 2, 0.8);
+    background: rgba(255, 165, 2, 0.1);
+    box-shadow: 0 4px 20px rgba(255, 165, 2, 0.3);
+    width: 80px;
+    height: 80px;
+    border-style: dashed;
+  }
+  
+  @keyframes touchPulse {
+    0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.5; }
+    50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  }
+  
+  /* Pan mode indicator */
+  .pan-indicator {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 12px 20px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 2000;
+    backdrop-filter: blur(10px);
+    box-shadow: var(--shadow-hover);
+    display: none;
+    pointer-events: none;
+  }
+  
+  .pan-indicator.visible {
+    display: block;
+    animation: fadeInOut 0.5s ease-out;
+  }
+  
+  @keyframes fadeInOut {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
   }
   
   .controls-section {
@@ -257,6 +398,17 @@
   .reset-btn:hover {
     transform: translateY(-1px);
     box-shadow: var(--shadow-hover);
+  }
+  
+  /* Pan instruction */
+  .pan-instruction {
+    font-size: 11px;
+    color: var(--dark);
+    opacity: 0.7;
+    text-align: center;
+    padding: 4px 16px;
+    background: rgba(255,255,255,0.5);
+    border-bottom: 1px solid rgba(255,255,255,0.3);
   }
   
   #palette { 
@@ -466,6 +618,21 @@
       padding: 6px 12px;
       gap: 8px;
     }
+    
+    .touch-indicator {
+      width: 50px;
+      height: 50px;
+    }
+    
+    .touch-indicator.stamp {
+      width: 70px;
+      height: 70px;
+    }
+    
+    .pan-instruction {
+      font-size: 10px;
+      padding: 3px 12px;
+    }
   }
   
   @media (max-width: 480px) {
@@ -531,6 +698,21 @@
       padding: 6px 12px;
       font-size: 11px;
     }
+    
+    .touch-indicator {
+      width: 45px;
+      height: 45px;
+    }
+    
+    .touch-indicator.stamp {
+      width: 65px;
+      height: 65px;
+    }
+    
+    .pan-instruction {
+      font-size: 9px;
+      padding: 2px 8px;
+    }
   }
   
   /* Landscape mobile optimization */
@@ -556,6 +738,21 @@
     
     .zoom-controls { padding: 2px 8px; }
     .zoom-btn { width: 28px; height: 28px; font-size: 12px; }
+    
+    .touch-indicator {
+      width: 40px;
+      height: 40px;
+    }
+    
+    .touch-indicator.stamp {
+      width: 55px;
+      height: 55px;
+    }
+    
+    .pan-instruction {
+      font-size: 8px;
+      padding: 1px 6px;
+    }
   }
   
   /* Loading animation */
@@ -597,6 +794,12 @@
 
 <div id="canvasWrap">
   <canvas id="paint"></canvas>
+  <!-- Desktop brush indicator -->
+  <div class="brush-indicator" id="brushIndicator"></div>
+  <!-- Mobile touch indicator -->
+  <div class="touch-indicator" id="touchIndicator"></div>
+  <!-- Pan mode indicator -->
+  <div class="pan-indicator" id="panIndicator">🤏 Pan Mode - Drag to move around</div>
 </div>
 
 <div class="controls-section">
@@ -605,6 +808,10 @@
     <span class="zoom-info" id="zoomLevel">100%</span>
     <button class="zoom-btn" id="zoomIn">+</button>
     <button class="reset-btn" id="resetZoom">Reset View</button>
+  </div>
+  
+  <div class="pan-instruction">
+    💡 <strong>Desktop:</strong> Hold Space + Drag to pan | <strong>Mobile:</strong> Long press + Drag to pan
   </div>
   
   <div class="size-control">
@@ -632,6 +839,9 @@
   const paintLayer = document.createElement('canvas');
   const lineLayer = document.createElement('canvas');
   const canvasWrap = document.getElementById('canvasWrap');
+  const brushIndicator = document.getElementById('brushIndicator');
+  const touchIndicator = document.getElementById('touchIndicator');
+  const panIndicator = document.getElementById('panIndicator');
   
   // Zoom and pan variables
   let zoom = 1;
@@ -640,10 +850,23 @@
   let isPanning = false;
   let lastPanX = 0;
   let lastPanY = 0;
+  let panTimeout = null;
   
   // Canvas size variables
   let baseCanvasWidth = 800;
   let baseCanvasHeight = 600;
+  
+  // Cursor tracking
+  let isMouseOverCanvas = false;
+  let isTouchDevice = false;
+  let isSpacePressed = false;
+  let longPressTimer = null;
+  let longPressStarted = false;
+  
+  // Detect touch device
+  function detectTouchDevice() {
+    return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  }
   
   function updateCanvasSize() {
     canvas.width = baseCanvasWidth;
@@ -690,6 +913,72 @@
     
     updateCanvasSize();
     updateZoomDisplay();
+  }
+  
+  // Update cursor based on tool and pan mode
+  function updateCursor() {
+    canvasWrap.className = canvasWrap.className.replace(/\b\w+-mode\b/g, '');
+    
+    if (isPanning || isSpacePressed) {
+      canvasWrap.classList.add('panning');
+    } else {
+      canvasWrap.classList.add(tool + '-mode');
+    }
+  }
+  
+  // Show pan indicator
+  function showPanIndicator() {
+    panIndicator.classList.add('visible');
+    if (panTimeout) clearTimeout(panTimeout);
+    panTimeout = setTimeout(() => {
+      panIndicator.classList.remove('visible');
+    }, 2000);
+  }
+  
+  // Update brush indicator
+  function updateBrushIndicator(x, y, show = true) {
+    if (isTouchDevice || !show || isPanning || isSpacePressed) {
+      brushIndicator.classList.remove('visible');
+      return;
+    }
+    
+    const indicatorSize = Math.max(size * zoom, 10);
+    brushIndicator.style.width = indicatorSize + 'px';
+    brushIndicator.style.height = indicatorSize + 'px';
+    brushIndicator.style.left = x + 'px';
+    brushIndicator.style.top = y + 'px';
+    
+    // Update indicator style based on tool
+    brushIndicator.className = 'brush-indicator visible ' + tool;
+    
+    // Update border color based on current color for brush tool
+    if (tool === 'brush') {
+      brushIndicator.style.borderColor = color;
+      brushIndicator.style.background = color + '20'; // 20% opacity
+    }
+  }
+  
+  // Update touch indicator for mobile
+  function updateTouchIndicator(x, y, show = true, isDrawing = false) {
+    if (!isTouchDevice || !show || isPanning) {
+      touchIndicator.classList.remove('visible', 'drawing');
+      return;
+    }
+    
+    touchIndicator.style.left = x + 'px';
+    touchIndicator.style.top = y + 'px';
+    touchIndicator.className = 'touch-indicator visible ' + tool;
+    
+    if (isDrawing) {
+      touchIndicator.classList.add('drawing');
+    }
+    
+    // Update size for brush and eraser
+    if (tool === 'brush' || tool === 'eraser') {
+      const indicatorSize = Math.max(size * zoom * 0.8, 40);
+      touchIndicator.style.width = indicatorSize + 'px';
+      touchIndicator.style.height = indicatorSize + 'px';
+    }
   }
 
   let tool = 'brush';
@@ -762,6 +1051,8 @@
   }
 
   function beginStroke(x, y) {
+    if (isPanning || isSpacePressed) return;
+    
     if (tool === 'fill') {
       saveState();
       floodFill(x, y, color);
@@ -780,7 +1071,7 @@
   }
 
   function moveStroke(x, y) {
-    if (!isDrawing) return;
+    if (!isDrawing || isPanning) return;
     if (tool === 'brush' || tool === 'eraser') {
       const pctx = paintLayer.getContext('2d');
       pctx.lineJoin = pctx.lineCap = 'round';
@@ -877,14 +1168,13 @@
     pctx.globalCompositeOperation = prevComposite;
   }
 
-  // Pan and zoom functionality
+  // Enhanced pan functionality
   function startPan(clientX, clientY) {
-    if (tool !== 'brush' && tool !== 'fill' && tool !== 'eraser' && tool !== 'stamp') return;
-    
     isPanning = true;
     lastPanX = clientX;
     lastPanY = clientY;
-    canvasWrap.classList.add('dragging');
+    updateCursor();
+    showPanIndicator();
   }
 
   function updatePan(clientX, clientY) {
@@ -904,34 +1194,82 @@
 
   function endPan() {
     isPanning = false;
-    canvasWrap.classList.remove('dragging');
+    updateCursor();
   }
 
   function handleInputDown(e) {
     e.preventDefault();
+    
+    const isTouch = e.type.includes('touch');
+    const clientX = isTouch ? e.touches[0].clientX : e.clientX;
+    const clientY = isTouch ? e.touches[0].clientY : e.clientY;
+    
+    // Handle pan mode
+    if (isSpacePressed || longPressStarted) {
+      startPan(clientX, clientY);
+      return;
+    }
+    
+    // Handle long press for mobile panning
+    if (isTouch && !longPressStarted) {
+      longPressTimer = setTimeout(() => {
+        longPressStarted = true;
+        startPan(clientX, clientY);
+        navigator.vibrate && navigator.vibrate(50); // Haptic feedback
+      }, 500); // 500ms long press
+    }
+    
     const pt = getPt(e);
-    if (pt) {
-      if (e.ctrlKey || e.metaKey || (e.touches && e.touches.length > 1)) {
-        startPan(e.clientX || e.touches[0].clientX, e.clientY || e.touches[0].clientY);
-      } else {
-        beginStroke(pt.x, pt.y);
+    if (pt && !isPanning) {
+      beginStroke(pt.x, pt.y);
+      
+      // Show touch indicator when drawing starts
+      if (isTouch) {
+        updateTouchIndicator(clientX, clientY, true, true);
       }
     }
   }
 
   function handleInputMove(e) {
     e.preventDefault();
+    
+    const isTouch = e.type.includes('touch');
+    const clientX = isTouch ? e.touches[0].clientX : e.clientX;
+    const clientY = isTouch ? e.touches[0].clientY : e.clientY;
+    
     if (isPanning) {
-      updatePan(e.clientX || e.touches[0].clientX, e.clientY || e.touches[0].clientY);
-    } else {
-      const pt = getPt(e);
-      if (pt) moveStroke(pt.x, pt.y);
+      updatePan(clientX, clientY);
+      return;
+    }
+    
+    const pt = getPt(e);
+    if (pt) {
+      moveStroke(pt.x, pt.y);
+      
+      // Update indicators
+      if (isTouch) {
+        updateTouchIndicator(clientX, clientY, true, isDrawing);
+      } else if (!isSpacePressed) {
+        updateBrushIndicator(clientX, clientY, true);
+      }
     }
   }
 
   function handleInputUp(e) {
+    // Clear long press timer
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+    
+    longPressStarted = false;
     endPan();
     endStroke();
+    
+    // Hide touch indicator
+    if (e.type.includes('touch')) {
+      setTimeout(() => updateTouchIndicator(0, 0, false), 200);
+    }
   }
 
   function getPt(e) {
@@ -951,12 +1289,50 @@
     
     if (tool === 'stamp') {
       stampSelector.classList.add('visible');
-      paletteSection.style.display = 'none'; // Hide color palette when stamping
+      paletteSection.style.display = 'none';
     } else {
       stampSelector.classList.remove('visible');
-      paletteSection.style.display = 'block'; // Show color palette for other tools
+      paletteSection.style.display = 'block';
     }
+    
+    // Update cursor
+    updateCursor();
   }
+
+  // Keyboard event handlers for space key
+  document.addEventListener('keydown', e => {
+    if (e.code === 'Space' && !isSpacePressed) {
+      e.preventDefault();
+      isSpacePressed = true;
+      updateCursor();
+      showPanIndicator();
+    }
+  });
+
+  document.addEventListener('keyup', e => {
+    if (e.code === 'Space') {
+      e.preventDefault();
+      isSpacePressed = false;
+      updateCursor();
+    }
+  });
+
+  // Mouse events for cursor tracking
+  canvas.addEventListener('mouseenter', () => {
+    isMouseOverCanvas = true;
+    isTouchDevice = detectTouchDevice();
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    isMouseOverCanvas = false;
+    updateBrushIndicator(0, 0, false);
+  });
+
+  canvas.addEventListener('mousemove', e => {
+    if (isMouseOverCanvas && !isTouchDevice && !isPanning && !isSpacePressed) {
+      updateBrushIndicator(e.clientX, e.clientY, true);
+    }
+  });
 
   // Zoom controls
   document.getElementById('zoomIn').onclick = () => {
@@ -996,13 +1372,8 @@
   canvas.addEventListener('touchmove', handleInputMove, { passive: false });
   canvas.addEventListener('touchend', handleInputUp);
 
-  // Right-click for panning
+  // Prevent context menu
   canvas.addEventListener('contextmenu', e => e.preventDefault());
-  canvas.addEventListener('mousedown', e => {
-    if (e.button === 2) { // Right click
-      startPan(e.clientX, e.clientY);
-    }
-  });
 
   document.getElementById('toolBrush').onclick = () => setTool('brush');
   document.getElementById('toolFill').onclick = () => setTool('fill');
@@ -1121,9 +1492,11 @@
   });
 
   // Initialize
+  isTouchDevice = detectTouchDevice();
   updateCanvasSize();
   updateZoomDisplay();
   setTool('brush');
+  updateCursor();
   render();
 })();
 </script>
