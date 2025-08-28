@@ -177,11 +177,11 @@
   }
   
   #canvasWrap.fill-mode {
-    cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17h20"/><path d="M12 22V12"/></svg>') 12 12, auto;
+    cursor: crosshair;
   }
   
   #canvasWrap.eraser-mode {
-    cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 20H8l-4-4 9.172-9.172a4 4 0 015.656 0L20 8.828V20z"/></svg>') 12 12, auto;
+    cursor: crosshair;
   }
   
   #canvasWrap.stamp-mode {
@@ -228,6 +228,18 @@
   .brush-indicator.eraser {
     border-color: #ff4757;
     background: rgba(255, 71, 87, 0.1);
+    border-style: dashed;
+  }
+  
+  .brush-indicator.fill {
+    border-color: #2ed573;
+    background: rgba(46, 213, 115, 0.1);
+    border-style: dotted;
+  }
+  
+  .brush-indicator.stamp {
+    border-color: #ffa502;
+    background: rgba(255, 165, 2, 0.1);
     border-style: dashed;
   }
   
@@ -935,8 +947,26 @@
     }, 2000);
   }
   
-  // Update brush indicator
-  function updateBrushIndicator(x, y, show = true) {
+  // Fixed coordinate calculation that properly accounts for zoom and pan
+  function toCanvasCoords(clientX, clientY) {
+    const rect = canvas.getBoundingClientRect();
+    
+    // Get the position relative to the canvas element
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    
+    // Calculate the actual canvas coordinates accounting for zoom and pan
+    const canvasX = (x / zoom - panX) * (canvas.width / (rect.width / zoom));
+    const canvasY = (y / zoom - panY) * (canvas.height / (rect.height / zoom));
+    
+    return {
+      x: Math.round(canvasX),
+      y: Math.round(canvasY)
+    };
+  }
+  
+  // Update brush indicator with fixed positioning
+  function updateBrushIndicator(clientX, clientY, show = true) {
     if (isTouchDevice || !show || isPanning || isSpacePressed) {
       brushIndicator.classList.remove('visible');
       return;
@@ -945,8 +975,8 @@
     const indicatorSize = Math.max(size * zoom, 10);
     brushIndicator.style.width = indicatorSize + 'px';
     brushIndicator.style.height = indicatorSize + 'px';
-    brushIndicator.style.left = x + 'px';
-    brushIndicator.style.top = y + 'px';
+    brushIndicator.style.left = clientX + 'px';
+    brushIndicator.style.top = clientY + 'px';
     
     // Update indicator style based on tool
     brushIndicator.className = 'brush-indicator visible ' + tool;
@@ -954,19 +984,19 @@
     // Update border color based on current color for brush tool
     if (tool === 'brush') {
       brushIndicator.style.borderColor = color;
-      brushIndicator.style.background = color + '20'; // 20% opacity
+      brushIndicator.style.background = color + '20';
     }
   }
   
-  // Update touch indicator for mobile
-  function updateTouchIndicator(x, y, show = true, isDrawing = false) {
+  // Update touch indicator for mobile with fixed positioning
+  function updateTouchIndicator(clientX, clientY, show = true, isDrawing = false) {
     if (!isTouchDevice || !show || isPanning) {
       touchIndicator.classList.remove('visible', 'drawing');
       return;
     }
     
-    touchIndicator.style.left = x + 'px';
-    touchIndicator.style.top = y + 'px';
+    touchIndicator.style.left = clientX + 'px';
+    touchIndicator.style.top = clientY + 'px';
     touchIndicator.className = 'touch-indicator visible ' + tool;
     
     if (isDrawing) {
@@ -987,7 +1017,6 @@
   let isDrawing = false;
   let last = null;
   let stampEmoji = '🌻';
-  let imgOffsetX = 0, imgOffsetY = 0, imgScale = 1;
   let uploadedImage = null;
 
   // Undo/Redo stacks
@@ -1040,16 +1069,6 @@
     ctx.drawImage(lineLayer, 0, 0);
   }
 
-  function toCanvasCoords(clientX, clientY) {
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / (rect.width / zoom);
-    const scaleY = canvas.height / (rect.height / zoom);
-    return {
-      x: Math.round(((clientX - rect.left) / zoom - panX) * scaleX),
-      y: Math.round(((clientY - rect.top) / zoom - panY) * scaleY)
-    };
-  }
-
   function beginStroke(x, y) {
     if (isPanning || isSpacePressed) return;
     
@@ -1075,7 +1094,7 @@
     if (tool === 'brush' || tool === 'eraser') {
       const pctx = paintLayer.getContext('2d');
       pctx.lineJoin = pctx.lineCap = 'round';
-      pctx.lineWidth = size / zoom; // Adjust brush size for zoom
+      pctx.lineWidth = size; // Use actual size, not divided by zoom
       
       if (tool === 'eraser') {
         pctx.globalCompositeOperation = 'destination-out';
@@ -1160,7 +1179,7 @@
     const prevComposite = pctx.globalCompositeOperation;
     
     pctx.globalCompositeOperation = 'source-over';
-    pctx.font = (size * 2 / zoom) + 'px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", system-ui, sans-serif';
+    pctx.font = (size * 2) + 'px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", system-ui, sans-serif';
     pctx.textAlign = 'center';
     pctx.textBaseline = 'middle';
     pctx.fillText(stampEmoji, x, y);
@@ -1168,7 +1187,7 @@
     pctx.globalCompositeOperation = prevComposite;
   }
 
-  // Enhanced pan functionality
+  // Enhanced pan functionality with fixed coordinate handling
   function startPan(clientX, clientY) {
     isPanning = true;
     lastPanX = clientX;
@@ -1180,8 +1199,8 @@
   function updatePan(clientX, clientY) {
     if (!isPanning) return;
     
-    const deltaX = (clientX - lastPanX) / zoom;
-    const deltaY = (clientY - lastPanY) / zoom;
+    const deltaX = (clientX - lastPanX);
+    const deltaY = (clientY - lastPanY);
     
     panX += deltaX;
     panY += deltaY;
@@ -1215,15 +1234,14 @@
       longPressTimer = setTimeout(() => {
         longPressStarted = true;
         startPan(clientX, clientY);
-        navigator.vibrate && navigator.vibrate(50); // Haptic feedback
-      }, 500); // 500ms long press
+        navigator.vibrate && navigator.vibrate(50);
+      }, 500);
     }
     
-    const pt = getPt(e);
+    const pt = toCanvasCoords(clientX, clientY);
     if (pt && !isPanning) {
       beginStroke(pt.x, pt.y);
       
-      // Show touch indicator when drawing starts
       if (isTouch) {
         updateTouchIndicator(clientX, clientY, true, true);
       }
@@ -1242,11 +1260,10 @@
       return;
     }
     
-    const pt = getPt(e);
+    const pt = toCanvasCoords(clientX, clientY);
     if (pt) {
       moveStroke(pt.x, pt.y);
       
-      // Update indicators
       if (isTouch) {
         updateTouchIndicator(clientX, clientY, true, isDrawing);
       } else if (!isSpacePressed) {
@@ -1256,7 +1273,6 @@
   }
 
   function handleInputUp(e) {
-    // Clear long press timer
     if (longPressTimer) {
       clearTimeout(longPressTimer);
       longPressTimer = null;
@@ -1266,17 +1282,9 @@
     endPan();
     endStroke();
     
-    // Hide touch indicator
     if (e.type.includes('touch')) {
       setTimeout(() => updateTouchIndicator(0, 0, false), 200);
     }
-  }
-
-  function getPt(e) {
-    if (isPanning) return null;
-    if (e.touches && e.touches[0]) return toCanvasCoords(e.touches[0].clientX, e.touches[0].clientY);
-    if (e.clientX != null) return toCanvasCoords(e.clientX, e.clientY);
-    return null;
   }
 
   function setTool(newTool) {
@@ -1295,7 +1303,6 @@
       paletteSection.style.display = 'block';
     }
     
-    // Update cursor
     updateCursor();
   }
 
@@ -1372,7 +1379,6 @@
   canvas.addEventListener('touchmove', handleInputMove, { passive: false });
   canvas.addEventListener('touchend', handleInputUp);
 
-  // Prevent context menu
   canvas.addEventListener('contextmenu', e => e.preventDefault());
 
   document.getElementById('toolBrush').onclick = () => setTool('brush');
@@ -1401,14 +1407,12 @@
     img.onload = () => {
       uploadedImage = img;
       
-      // Clear paint layer when loading new image
       const pctx = paintLayer.getContext('2d');
       pctx.clearRect(0, 0, paintLayer.width, paintLayer.height);
       
       const lctx = lineLayer.getContext('2d');
       lctx.clearRect(0, 0, lineLayer.width, lineLayer.height);
       
-      // Fit canvas to image
       fitImageToCanvas();
     };
     img.src = URL.createObjectURL(file);
