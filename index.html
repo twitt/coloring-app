@@ -2,54 +2,151 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mobile Coloring App</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>PvZ Coloring Studio</title>
 <style>
-  * { box-sizing: border-box; }
+  :root {
+    --primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --success: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    --warning: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    --dark: #2c3e50;
+    --light: #ecf0f1;
+    --shadow: 0 10px 30px rgba(0,0,0,0.1);
+    --shadow-hover: 0 15px 40px rgba(0,0,0,0.15);
+    --radius: 16px;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  * { 
+    box-sizing: border-box; 
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+  
   body { 
-    margin: 0; 
     display: flex; 
     flex-direction: column; 
     height: 100vh; 
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    height: 100dvh; /* Dynamic viewport height for mobile */
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     touch-action: manipulation;
-    background: #f0f0f0;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  .app-header {
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(20px);
+    padding: 12px 16px 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    box-shadow: var(--shadow);
+    position: relative;
+    z-index: 100;
+  }
+  
+  .app-title {
+    text-align: center;
+    font-size: 18px;
+    font-weight: 700;
+    background: var(--primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0 0 8px;
+    letter-spacing: -0.5px;
   }
   
   #toolbar { 
-    flex: 0 0 auto; 
     display: flex; 
-    gap: 6px; 
-    padding: 8px; 
-    background: #eee; 
+    gap: 8px; 
     align-items: center; 
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     overflow-x: auto;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 0 4px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
+  
+  #toolbar::-webkit-scrollbar { display: none; }
   
   #toolbar button {
-    padding: 8px 12px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    background: white;
+    padding: 10px 14px;
+    border: none;
+    border-radius: var(--radius);
+    background: rgba(255,255,255,0.9);
     cursor: pointer;
-    font-size: 14px;
+    font-size: 13px;
+    font-weight: 600;
     white-space: nowrap;
     min-height: 44px;
-    transition: all 0.2s;
+    min-width: 44px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transition: var(--transition);
+    backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
   }
   
-  #toolbar button:hover { background: #f5f5f5; transform: scale(1.02); }
-  #toolbar button.active { background: #007bff; color: white; box-shadow: 0 2px 4px rgba(0,123,255,0.3); }
+  #toolbar button:before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--primary);
+    opacity: 0;
+    transition: var(--transition);
+  }
+  
+  #toolbar button span {
+    position: relative;
+    z-index: 1;
+  }
+  
+  #toolbar button:hover { 
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+  }
+  
+  #toolbar button:hover:before { opacity: 0.1; }
+  
+  #toolbar button.active { 
+    background: var(--primary);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-hover);
+  }
+  
+  #toolbar button.active:before { opacity: 0; }
   
   #fileInput {
-    padding: 8px;
-    font-size: 14px;
+    padding: 8px 12px;
+    font-size: 13px;
     min-height: 44px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    background: white;
+    border: 2px dashed rgba(255,255,255,0.3);
+    border-radius: var(--radius);
+    background: rgba(255,255,255,0.1);
+    color: white;
+    backdrop-filter: blur(10px);
+    cursor: pointer;
+    transition: var(--transition);
+    flex-shrink: 0;
+    min-width: 100px;
+  }
+  
+  #fileInput:hover {
+    border-color: rgba(255,255,255,0.5);
+    background: rgba(255,255,255,0.2);
   }
   
   #canvasWrap { 
@@ -57,406 +154,612 @@
     display: flex; 
     align-items: center; 
     justify-content: center; 
-    background: #ccc; 
+    background: linear-gradient(45deg, #f0f2f5, #e9ecef);
     overflow: hidden;
     position: relative;
-    padding: 10px;
+    padding: 16px;
   }
   
   canvas { 
     background: white; 
     touch-action: none; 
-    max-width: 100%; 
-    max-height: 100%;
-    border: 3px solid #333;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-hover);
+    transition: var(--transition);
+    max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 280px);
+    max-height: calc(100dvh - 280px);
+  }
+  
+  canvas:hover {
+    box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+  }
+  
+  .controls-section {
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255,255,255,0.2);
+    position: relative;
+    z-index: 90;
+  }
+  
+  .section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--dark);
+    margin: 0;
+    padding: 12px 16px 8px;
+    text-align: center;
+    opacity: 0.8;
   }
   
   #palette { 
-    flex: 0 0 auto; 
     display: flex; 
     flex-wrap: wrap; 
     justify-content: center; 
-    gap: 4px; 
-    padding: 8px; 
-    background: #eee;
+    gap: 8px; 
+    padding: 8px 16px 16px;
     overflow-x: auto;
-    box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
   }
   
   .swatch { 
-    width: 36px; 
-    height: 36px; 
+    width: 44px; 
+    height: 44px; 
     border-radius: 50%; 
-    border: 2px solid #444; 
+    border: 3px solid rgba(255,255,255,0.8);
     cursor: pointer; 
     flex-shrink: 0;
-    min-width: 36px;
-    transition: all 0.2s;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  }
-  .swatch:hover { transform: scale(1.1); }
-  .swatch.selected { 
-    border-color: #007bff; 
-    border-width: 4px; 
-    box-shadow: 0 0 0 2px rgba(0,123,255,0.3);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
   }
   
+  .swatch:before {
+    content: '';
+    position: absolute;
+    top: -2px; left: -2px; right: -2px; bottom: -2px;
+    border-radius: 50%;
+    background: var(--primary);
+    opacity: 0;
+    transition: var(--transition);
+    z-index: -1;
+  }
+  
+  .swatch:hover { 
+    transform: scale(1.1) translateY(-2px);
+    box-shadow: var(--shadow-hover);
+  }
+  
+  .swatch.selected { 
+    border-color: transparent;
+    transform: scale(1.1);
+    box-shadow: var(--shadow-hover);
+  }
+  
+  .swatch.selected:before { opacity: 1; }
+  
   #stampSelector { 
-    flex: 0 0 auto; 
     display: none; 
     flex-wrap: wrap; 
     justify-content: center; 
-    gap: 4px; 
-    padding: 8px; 
-    background: #ddd;
-    max-height: 120px;
+    gap: 8px; 
+    padding: 8px 16px 16px;
+    max-height: 140px;
     overflow-y: auto;
-    box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+    scrollbar-width: thin;
   }
   
   #stampSelector.visible { display: flex; }
   
   .stamp { 
-    width: 44px; 
-    height: 44px; 
-    border-radius: 8px; 
-    border: 2px solid #666; 
+    width: 52px; 
+    height: 52px; 
+    border-radius: var(--radius); 
+    border: 2px solid rgba(255,255,255,0.8);
     cursor: pointer; 
     display: flex; 
     align-items: center; 
     justify-content: center; 
-    font-size: 24px; 
-    background: white;
+    font-size: 28px; 
+    background: rgba(255,255,255,0.9);
     flex-shrink: 0;
-    min-width: 44px;
-    min-height: 44px;
-    transition: all 0.2s;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  }
-  .stamp:hover { transform: scale(1.05); }
-  .stamp.selected { 
-    border-color: #007bff; 
-    background: #e7f3ff; 
-    border-width: 3px;
-    box-shadow: 0 0 0 2px rgba(0,123,255,0.3);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
   }
   
-  /* Mobile optimizations */
+  .stamp:before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--warning);
+    opacity: 0;
+    transition: var(--transition);
+  }
+  
+  .stamp:hover { 
+    transform: scale(1.05) translateY(-2px);
+    box-shadow: var(--shadow-hover);
+  }
+  
+  .stamp:hover:before { opacity: 0.1; }
+  
+  .stamp.selected { 
+    background: var(--warning);
+    border-color: transparent;
+    color: white;
+    transform: scale(1.05);
+    box-shadow: var(--shadow-hover);
+  }
+  
+  .stamp.selected:before { opacity: 0; }
+  
+  /* Size slider */
+  .size-control {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255,255,255,0.5);
+    border-top: 1px solid rgba(255,255,255,0.3);
+  }
+  
+  .size-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--dark);
+    min-width: 80px;
+  }
+  
+  #sizeSlider {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #e9ecef, var(--primary));
+    outline: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+  }
+  
+  #sizeSlider::-webkit-slider-thumb {
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--primary);
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    transition: var(--transition);
+  }
+  
+  #sizeSlider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: var(--shadow-hover);
+  }
+  
+  .size-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--dark);
+    min-width: 30px;
+    text-align: center;
+  }
+  
+  /* Enhanced mobile responsiveness */
   @media (max-width: 768px) {
-    body {
-      -webkit-text-size-adjust: 100%;
-      -webkit-font-smoothing: antialiased;
-    }
-    
-    #toolbar {
-      gap: 4px;
-      padding: 8px 4px;
-      justify-content: space-between;
-      min-height: 60px;
-    }
+    .app-title { font-size: 16px; }
     
     #toolbar button {
-      padding: 8px 6px;
-      font-size: 14px;
-      min-height: 44px;
-      flex: 1;
-      min-width: 70px;
-      border-radius: 8px;
+      font-size: 12px;
+      padding: 8px 10px;
+      min-width: 40px;
+      min-height: 40px;
     }
     
     #fileInput {
-      font-size: 14px;
-      padding: 8px;
-      min-height: 44px;
-      border-radius: 8px;
+      font-size: 12px;
+      min-height: 40px;
+      min-width: 80px;
+    }
+    
+    canvas {
+      max-height: calc(100vh - 320px);
+      max-height: calc(100dvh - 320px);
     }
     
     .swatch {
       width: 40px;
       height: 40px;
-      min-width: 40px;
-      border-width: 3px;
     }
     
     .stamp {
       width: 48px;
       height: 48px;
-      min-width: 48px;
-      min-height: 48px;
-      font-size: 26px;
-      border-width: 3px;
-      border-radius: 10px;
-    }
-    
-    #palette, #stampSelector {
-      padding: 10px;
-      gap: 6px;
-      min-height: 70px;
+      font-size: 24px;
     }
     
     #stampSelector {
-      max-height: 150px;
+      max-height: 120px;
     }
   }
   
   @media (max-width: 480px) {
+    .app-header { padding: 8px 12px 6px; }
+    .app-title { font-size: 15px; margin-bottom: 6px; }
+    
     #toolbar {
-      flex-wrap: wrap;
-      gap: 3px;
-      padding: 6px 3px;
+      gap: 6px;
+      padding: 0 2px;
     }
     
     #toolbar button {
-      font-size: 12px;
-      padding: 6px 4px;
-      min-width: 65px;
-      min-height: 40px;
+      font-size: 11px;
+      padding: 6px 8px;
+      min-width: 36px;
+      min-height: 36px;
     }
     
     #fileInput {
-      font-size: 12px;
-      min-height: 40px;
-      flex: 1 1 100%;
-      margin-top: 3px;
+      font-size: 11px;
+      min-height: 36px;
+      min-width: 70px;
+    }
+    
+    #canvasWrap { padding: 12px; }
+    
+    canvas {
+      max-width: calc(100vw - 24px);
+      max-height: calc(100vh - 340px);
+      max-height: calc(100dvh - 340px);
     }
     
     .swatch {
       width: 36px;
       height: 36px;
-      min-width: 36px;
     }
     
     .stamp {
       width: 44px;
       height: 44px;
-      min-width: 44px;
-      min-height: 44px;
-      font-size: 24px;
+      font-size: 22px;
     }
+    
+    .section-title { font-size: 13px; padding: 8px 12px 6px; }
+    #palette, #stampSelector { gap: 6px; padding: 6px 12px 12px; }
+    
+    .size-control { padding: 8px 12px; }
+    .size-label, .size-value { font-size: 13px; }
   }
   
-  /* iOS Safari specific fixes */
-  @supports (-webkit-touch-callout: none) {
-    body {
-      -webkit-user-select: none;
-      -webkit-touch-callout: none;
-      -webkit-tap-highlight-color: transparent;
+  /* Landscape mobile optimization */
+  @media (max-height: 500px) and (orientation: landscape) {
+    .app-header { padding: 6px 12px 4px; }
+    .app-title { font-size: 14px; margin-bottom: 4px; }
+    
+    #toolbar button {
+      min-height: 32px;
+      padding: 4px 8px;
+      font-size: 11px;
     }
     
-    #toolbar button, .swatch, .stamp {
-      -webkit-appearance: none;
-      -webkit-tap-highlight-color: transparent;
+    #fileInput { min-height: 32px; }
+    
+    canvas {
+      max-height: calc(100vh - 200px);
+      max-height: calc(100dvh - 200px);
     }
     
-    .stamp {
-      font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
-    }
+    .section-title { padding: 6px 12px 4px; font-size: 12px; }
+    #palette, #stampSelector { padding: 4px 12px 8px; }
+    .swatch { width: 32px; height: 32px; }
+    .stamp { width: 40px; height: 40px; font-size: 20px; }
+    
+    #stampSelector { max-height: 80px; }
+    .size-control { padding: 6px 12px; }
   }
-
+  
   /* Loading animation */
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+  
   .loading {
-    text-align: center;
-    padding: 20px;
-    color: #666;
+    animation: pulse 1.5s infinite;
+  }
+  
+  /* Success feedback */
+  @keyframes success {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+  }
+  
+  .success-feedback {
+    animation: success 0.3s ease-out;
   }
 </style>
 </head>
 <body>
-<div id="toolbar">
-  <button id="toolBrush">✏️ Brush</button>
-  <button id="toolFill">🪣 Fill</button>
-  <button id="toolEraser">🩹 Eraser</button>
-  <button id="toolStamp">🖼️ Stamp</button>
-  <button id="undoBtn">↩️ Undo</button>
-  <button id="redoBtn">↪️ Redo</button>
-  <input type="file" id="fileInput" accept="image/*">
-  <button id="saveBtn">💾 Save</button>
+<div class="app-header">
+  <h1 class="app-title">🌻 PvZ Coloring Studio</h1>
+  <div id="toolbar">
+    <button id="toolBrush"><span>✏️ Brush</span></button>
+    <button id="toolFill"><span>🪣 Fill</span></button>
+    <button id="toolEraser"><span>🧽 Eraser</span></button>
+    <button id="toolStamp"><span>🎯 Stamp</span></button>
+    <button id="undoBtn"><span>↩️ Undo</span></button>
+    <button id="redoBtn"><span>↪️ Redo</span></button>
+    <button id="saveBtn"><span>💾 Save</span></button>
+    <input type="file" id="fileInput" accept="image/*" placeholder="Load Image">
+  </div>
 </div>
+
 <div id="canvasWrap">
-  <canvas id="paint" width="800" height="600"></canvas>
+  <canvas id="paint"></canvas>
 </div>
-<div id="palette"></div>
-<div id="stampSelector"></div>
+
+<div class="controls-section">
+  <div class="size-control">
+    <span class="size-label">Brush Size:</span>
+    <input type="range" id="sizeSlider" min="5" max="50" value="24">
+    <span class="size-value" id="sizeValue">24</span>
+  </div>
+  
+  <h3 class="section-title">🎨 Color Palette</h3>
+  <div id="palette"></div>
+  
+  <div id="stampSelector">
+    <h3 class="section-title">🌱 PvZ Characters & Elements</h3>
+    <div id="stampGrid"></div>
+  </div>
+</div>
+
 <script>
 (() => {
+  // Canvas setup with perfect mobile sizing
   const canvas = document.getElementById('paint');
   const ctx = canvas.getContext('2d');
   const paintLayer = document.createElement('canvas');
   const lineLayer = document.createElement('canvas');
-  paintLayer.width=lineLayer.width=canvas.width;
-  paintLayer.height=lineLayer.height=canvas.height;
+  
+  // Responsive canvas sizing
+  function resizeCanvas() {
+    const container = document.getElementById('canvasWrap');
+    const containerRect = container.getBoundingClientRect();
+    const maxWidth = containerRect.width - 32;
+    const maxHeight = containerRect.height - 32;
+    
+    // Set canvas size based on device
+    const isPortrait = window.innerHeight > window.innerWidth;
+    const isMobile = window.innerWidth <= 768;
+    
+    if (isMobile) {
+      if (isPortrait) {
+        canvas.width = Math.min(maxWidth, 600);
+        canvas.height = Math.min(maxHeight, 800);
+      } else {
+        canvas.width = Math.min(maxWidth, 800);
+        canvas.height = Math.min(maxHeight, 500);
+      }
+    } else {
+      canvas.width = Math.min(maxWidth, 800);
+      canvas.height = Math.min(maxHeight, 600);
+    }
+    
+    paintLayer.width = lineLayer.width = canvas.width;
+    paintLayer.height = lineLayer.height = canvas.height;
+    
+    render();
+  }
 
-  let tool='brush';
-  let color='#3fbf5f';
-  let size=24;
-  let isDrawing=false;
-  let last=null;
-  let stampEmoji='🌻';
-  let imgOffsetX=0, imgOffsetY=0, imgScale=1;
-  let uploadedImage=null;
+  let tool = 'brush';
+  let color = '#4CAF50';
+  let size = 24;
+  let isDrawing = false;
+  let last = null;
+  let stampEmoji = '🌻';
+  let imgOffsetX = 0, imgOffsetY = 0, imgScale = 1;
+  let uploadedImage = null;
 
   // Undo/Redo stacks
-  const undoStack=[]; const redoStack=[];
-  function saveState(){
-    const pctx=paintLayer.getContext('2d');
-    undoStack.push(pctx.getImageData(0,0,paintLayer.width,paintLayer.height));
-    if(undoStack.length>30) undoStack.shift();
-    redoStack.length=0;
+  const undoStack = [], redoStack = [];
+  
+  function saveState() {
+    const pctx = paintLayer.getContext('2d');
+    undoStack.push(pctx.getImageData(0, 0, paintLayer.width, paintLayer.height));
+    if (undoStack.length > 30) undoStack.shift();
+    redoStack.length = 0;
   }
-  function undo(){
-    if(undoStack.length>0){
-      const pctx=paintLayer.getContext('2d');
-      redoStack.push(pctx.getImageData(0,0,paintLayer.width,paintLayer.height));
-      const img=undoStack.pop();
-      pctx.putImageData(img,0,0);
+
+  function undo() {
+    if (undoStack.length > 0) {
+      const pctx = paintLayer.getContext('2d');
+      redoStack.push(pctx.getImageData(0, 0, paintLayer.width, paintLayer.height));
+      const img = undoStack.pop();
+      pctx.putImageData(img, 0, 0);
       render();
-    }
-  }
-  function redo(){
-    if(redoStack.length>0){
-      const pctx=paintLayer.getContext('2d');
-      undoStack.push(pctx.getImageData(0,0,paintLayer.width,paintLayer.height));
-      const img=redoStack.pop();
-      pctx.putImageData(img,0,0);
-      render();
+      
+      // Success feedback
+      document.getElementById('undoBtn').classList.add('success-feedback');
+      setTimeout(() => document.getElementById('undoBtn').classList.remove('success-feedback'), 300);
     }
   }
 
-  function render(){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    ctx.fillStyle='#fff'; ctx.fillRect(0,0,canvas.width,canvas.height);
-    // Draw uploaded image first (as background/outline)
-    if(uploadedImage){
-      ctx.drawImage(uploadedImage,imgOffsetX,imgOffsetY,uploadedImage.width*imgScale,uploadedImage.height*imgScale);
+  function redo() {
+    if (redoStack.length > 0) {
+      const pctx = paintLayer.getContext('2d');
+      undoStack.push(pctx.getImageData(0, 0, paintLayer.width, paintLayer.height));
+      const img = redoStack.pop();
+      pctx.putImageData(img, 0, 0);
+      render();
+      
+      // Success feedback
+      document.getElementById('redoBtn').classList.add('success-feedback');
+      setTimeout(() => document.getElementById('redoBtn').classList.remove('success-feedback'), 300);
     }
-    // Draw paint layer on top so we can color over the image
-    ctx.drawImage(paintLayer,0,0);
-    // Draw line layer on top for any additional outlines
-    ctx.drawImage(lineLayer,0,0);
   }
 
-  function toCanvasCoords(clientX, clientY){
-    const rect=canvas.getBoundingClientRect();
-    const scaleX=canvas.width/rect.width;
-    const scaleY=canvas.height/rect.height;
+  function render() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    if (uploadedImage) {
+      ctx.drawImage(uploadedImage, imgOffsetX, imgOffsetY, uploadedImage.width * imgScale, uploadedImage.height * imgScale);
+    }
+    
+    ctx.drawImage(paintLayer, 0, 0);
+    ctx.drawImage(lineLayer, 0, 0);
+  }
+
+  function toCanvasCoords(clientX, clientY) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
     return {
-      x:Math.round((clientX-rect.left)*scaleX),
-      y:Math.round((clientY-rect.top)*scaleY)
+      x: Math.round((clientX - rect.left) * scaleX),
+      y: Math.round((clientY - rect.top) * scaleY)
     };
   }
 
-  function beginStroke(x,y){
-    if(tool==='fill'){ saveState(); floodFill(x,y,color); render(); return; }
-    if(tool==='stamp'){ saveState(); placeStamp(x,y); render(); return; }
-    isDrawing=true; last={x,y};
-    if(tool==='brush'||tool==='eraser') saveState();
+  function beginStroke(x, y) {
+    if (tool === 'fill') {
+      saveState();
+      floodFill(x, y, color);
+      render();
+      return;
+    }
+    if (tool === 'stamp') {
+      saveState();
+      placeStamp(x, y);
+      render();
+      return;
+    }
+    isDrawing = true;
+    last = { x, y };
+    if (tool === 'brush' || tool === 'eraser') saveState();
   }
-  function moveStroke(x,y){
-    if(!isDrawing) return;
-    if(tool==='brush'||tool==='eraser'){
-      const pctx=paintLayer.getContext('2d');
-      pctx.lineJoin=pctx.lineCap='round';
-      pctx.lineWidth=size;
-      if(tool==='eraser'){ pctx.globalCompositeOperation='destination-out'; }
-      else { pctx.globalCompositeOperation='source-over'; pctx.strokeStyle=color; }
+
+  function moveStroke(x, y) {
+    if (!isDrawing) return;
+    if (tool === 'brush' || tool === 'eraser') {
+      const pctx = paintLayer.getContext('2d');
+      pctx.lineJoin = pctx.lineCap = 'round';
+      pctx.lineWidth = size;
+      
+      if (tool === 'eraser') {
+        pctx.globalCompositeOperation = 'destination-out';
+      } else {
+        pctx.globalCompositeOperation = 'source-over';
+        pctx.strokeStyle = color;
+      }
+      
       pctx.beginPath();
-      pctx.moveTo(last.x,last.y);
-      pctx.lineTo(x,y);
+      pctx.moveTo(last.x, last.y);
+      pctx.lineTo(x, y);
       pctx.stroke();
-      last={x,y};
+      last = { x, y };
       render();
     }
   }
-  function endStroke(){ isDrawing=false; last=null; }
 
-  function floodFill(x,y,hex){
-    const pctx=paintLayer.getContext('2d');
-    const base=pctx.getImageData(0,0,paintLayer.width,paintLayer.height);
+  function endStroke() {
+    isDrawing = false;
+    last = null;
+  }
+
+  function floodFill(x, y, hex) {
+    const pctx = paintLayer.getContext('2d');
+    const base = pctx.getImageData(0, 0, paintLayer.width, paintLayer.height);
     
-    // Get combined image data (background image + paint layer) for flood fill detection
     const tempCanvas = document.createElement('canvas');
     tempCanvas.width = canvas.width;
     tempCanvas.height = canvas.height;
     const tempCtx = tempCanvas.getContext('2d');
     
-    // Draw background image and paint layer to temp canvas
-    tempCtx.fillStyle='#fff'; 
-    tempCtx.fillRect(0,0,tempCanvas.width,tempCanvas.height);
-    if(uploadedImage){
-      tempCtx.drawImage(uploadedImage,imgOffsetX,imgOffsetY,uploadedImage.width*imgScale,uploadedImage.height*imgScale);
+    tempCtx.fillStyle = '#fff';
+    tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+    if (uploadedImage) {
+      tempCtx.drawImage(uploadedImage, imgOffsetX, imgOffsetY, uploadedImage.width * imgScale, uploadedImage.height * imgScale);
     }
-    tempCtx.drawImage(paintLayer,0,0);
+    tempCtx.drawImage(paintLayer, 0, 0);
     
-    const combined = tempCtx.getImageData(0,0,tempCanvas.width,tempCanvas.height);
-    const data=base.data, combinedData=combined.data;
-    const w=paintLayer.width;
-    const fill=hexToRgba(hex);
-    const targetIdx=(y*w+x)*4;
-    const orig=[combinedData[targetIdx],combinedData[targetIdx+1],combinedData[targetIdx+2],combinedData[targetIdx+3]];
+    const combined = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+    const data = base.data, combinedData = combined.data;
+    const w = paintLayer.width;
+    const fill = hexToRgba(hex);
+    const targetIdx = (y * w + x) * 4;
+    const orig = [combinedData[targetIdx], combinedData[targetIdx + 1], combinedData[targetIdx + 2], combinedData[targetIdx + 3]];
 
-    const seen=new Uint8Array(w*paintLayer.height);
-    const stack=[[x,y]];
-    while(stack.length){
-      const [cx,cy]=stack.pop();
-      if(cx<0||cy<0||cx>=w||cy>=paintLayer.height) continue;
-      const i=(cy*w+cx)*4;
-      if(seen[cy*w+cx]) continue;
+    const seen = new Uint8Array(w * paintLayer.height);
+    const stack = [[x, y]];
+    
+    while (stack.length) {
+      const [cx, cy] = stack.pop();
+      if (cx < 0 || cy < 0 || cx >= w || cy >= paintLayer.height) continue;
+      const i = (cy * w + cx) * 4;
+      if (seen[cy * w + cx]) continue;
       
-      // Check if we've hit a boundary (significant color difference)
-      if(!equalColor(combinedData.slice(i,i+4),orig)) continue;
+      if (!equalColor(combinedData.slice(i, i + 4), orig)) continue;
       
-      data[i]=fill[0]; data[i+1]=fill[1]; data[i+2]=fill[2]; data[i+3]=255;
-      seen[cy*w+cx]=1;
-      stack.push([cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]);
+      data[i] = fill[0];
+      data[i + 1] = fill[1];
+      data[i + 2] = fill[2];
+      data[i + 3] = 255;
+      seen[cy * w + cx] = 1;
+      stack.push([cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]);
     }
-    pctx.putImageData(base,0,0);
+    pctx.putImageData(base, 0, 0);
   }
-  function equalColor(a,b){ 
-    // More lenient color matching for better fill behavior
+
+  function equalColor(a, b) {
     const threshold = 30;
-    return Math.abs(a[0]-b[0]) <= threshold && 
-           Math.abs(a[1]-b[1]) <= threshold && 
-           Math.abs(a[2]-b[2]) <= threshold;
-  }
-  function hexToRgba(hex){ hex=hex.replace('#',''); if(hex.length===3) hex=hex.split('').map(c=>c+c).join('');
-    return [parseInt(hex.substr(0,2),16),parseInt(hex.substr(2,2),16),parseInt(hex.substr(4,2),16),255]; }
-
-  function placeStamp(x,y){
-    const pctx=paintLayer.getContext('2d');
-    // Better emoji rendering for iOS
-    pctx.font=(size*2)+'px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", Arial, sans-serif';
-    pctx.textAlign='center'; 
-    pctx.textBaseline='middle';
-    pctx.fillStyle = color; // Use current color for stamps
-    pctx.fillText(stampEmoji,x,y);
+    return Math.abs(a[0] - b[0]) <= threshold &&
+           Math.abs(a[1] - b[1]) <= threshold &&
+           Math.abs(a[2] - b[2]) <= threshold;
   }
 
-  function handleInputDown(e){ 
-    e.preventDefault();
-    const pt=getPt(e); 
-    if(pt) beginStroke(pt.x,pt.y); 
+  function hexToRgba(hex) {
+    hex = hex.replace('#', '');
+    if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+    return [parseInt(hex.substr(0, 2), 16), parseInt(hex.substr(2, 2), 16), parseInt(hex.substr(4, 2), 16), 255];
   }
-  function handleInputMove(e){ 
-    e.preventDefault();
-    const pt=getPt(e); 
-    if(pt) moveStroke(pt.x,pt.y); 
+
+  function placeStamp(x, y) {
+    const pctx = paintLayer.getContext('2d');
+    pctx.font = (size * 2) + 'px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", Arial, sans-serif';
+    pctx.textAlign = 'center';
+    pctx.textBaseline = 'middle';
+    pctx.fillStyle = color;
+    pctx.fillText(stampEmoji, x, y);
   }
-  function getPt(e){
-    if(e.touches&&e.touches[0]) return toCanvasCoords(e.touches[0].clientX,e.touches[0].clientY);
-    if(e.clientX!=null) return toCanvasCoords(e.clientX,e.clientY);
+
+  function handleInputDown(e) {
+    e.preventDefault();
+    const pt = getPt(e);
+    if (pt) beginStroke(pt.x, pt.y);
+  }
+
+  function handleInputMove(e) {
+    e.preventDefault();
+    const pt = getPt(e);
+    if (pt) moveStroke(pt.x, pt.y);
+  }
+
+  function getPt(e) {
+    if (e.touches && e.touches[0]) return toCanvasCoords(e.touches[0].clientX, e.touches[0].clientY);
+    if (e.clientX != null) return toCanvasCoords(e.clientX, e.clientY);
     return null;
   }
 
-  // Tool selection UI update
   function setTool(newTool) {
     tool = newTool;
-    // Update button states
     document.querySelectorAll('#toolbar button').forEach(btn => btn.classList.remove('active'));
     document.getElementById('tool' + newTool.charAt(0).toUpperCase() + newTool.slice(1)).classList.add('active');
     
-    // Show/hide stamp selector
     const stampSelector = document.getElementById('stampSelector');
     if (tool === 'stamp') {
       stampSelector.classList.add('visible');
@@ -465,98 +768,134 @@
     }
   }
 
-  canvas.addEventListener('mousedown',handleInputDown);
-  canvas.addEventListener('mousemove',handleInputMove);
-  window.addEventListener('mouseup',endStroke);
-  canvas.addEventListener('touchstart',handleInputDown,{passive:false});
-  canvas.addEventListener('touchmove',handleInputMove,{passive:false});
-  canvas.addEventListener('touchend',endStroke);
+  // Event listeners
+  canvas.addEventListener('mousedown', handleInputDown);
+  canvas.addEventListener('mousemove', handleInputMove);
+  window.addEventListener('mouseup', endStroke);
+  canvas.addEventListener('touchstart', handleInputDown, { passive: false });
+  canvas.addEventListener('touchmove', handleInputMove, { passive: false });
+  canvas.addEventListener('touchend', endStroke);
 
-  document.getElementById('toolBrush').onclick=()=>setTool('brush');
-  document.getElementById('toolFill').onclick=()=>setTool('fill');
-  document.getElementById('toolEraser').onclick=()=>setTool('eraser');
-  document.getElementById('toolStamp').onclick=()=>setTool('stamp');
-  document.getElementById('undoBtn').onclick=undo;
-  document.getElementById('redoBtn').onclick=redo;
-  document.getElementById('saveBtn').onclick=()=>{
-    const link=document.createElement('a');
-    link.download='coloring.png';
-    link.href=canvas.toDataURL();
+  document.getElementById('toolBrush').onclick = () => setTool('brush');
+  document.getElementById('toolFill').onclick = () => setTool('fill');
+  document.getElementById('toolEraser').onclick = () => setTool('eraser');
+  document.getElementById('toolStamp').onclick = () => setTool('stamp');
+  document.getElementById('undoBtn').onclick = undo;
+  document.getElementById('redoBtn').onclick = redo;
+  
+  document.getElementById('saveBtn').onclick = () => {
+    const link = document.createElement('a');
+    link.download = 'pvz-coloring.png';
+    link.href = canvas.toDataURL();
     link.click();
+    
+    // Success feedback
+    document.getElementById('saveBtn').classList.add('success-feedback');
+    setTimeout(() => document.getElementById('saveBtn').classList.remove('success-feedback'), 300);
   };
 
-  document.getElementById('fileInput').addEventListener('change',e=>{
-    const file=e.target.files[0];
-    if(!file) return;
-    const img=new Image();
-    img.onload=()=>{
-      uploadedImage=img;
-      const scale=Math.min(canvas.width/img.width,canvas.height/img.height);
-      imgScale=scale;
-      imgOffsetX=(canvas.width-img.width*scale)/2;
-      imgOffsetY=(canvas.height-img.height*scale)/2;
+  // File input
+  document.getElementById('fileInput').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const img = new Image();
+    img.onload = () => {
+      uploadedImage = img;
+      const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
+      imgScale = scale;
+      imgOffsetX = (canvas.width - img.width * scale) / 2;
+      imgOffsetY = (canvas.height - img.height * scale) / 2;
       
-      // Clear paint layer when loading new image
-      const pctx=paintLayer.getContext('2d');
-      pctx.clearRect(0,0,paintLayer.width,paintLayer.height);
+      const pctx = paintLayer.getContext('2d');
+      pctx.clearRect(0, 0, paintLayer.width, paintLayer.height);
       
-      // Clear line layer
-      const lctx=lineLayer.getContext('2d');
-      lctx.clearRect(0,0,lineLayer.width,lineLayer.height);
+      const lctx = lineLayer.getContext('2d');
+      lctx.clearRect(0, 0, lineLayer.width, lineLayer.height);
       
       render();
     };
-    img.src=URL.createObjectURL(file);
+    img.src = URL.createObjectURL(file);
   });
 
-  // Palette setup
-  const paletteColors=[
-    "#FF0000","#00FF00","#0000FF","#FFFF00","#FF00FF",
-    "#00FFFF","#FFA500","#800080","#008000","#000000",
-    "#FFFFFF","#808000","#00CED1","#C0C0C0","#A52A2A"
+  // Size slider
+  const sizeSlider = document.getElementById('sizeSlider');
+  const sizeValue = document.getElementById('sizeValue');
+  
+  sizeSlider.addEventListener('input', e => {
+    size = parseInt(e.target.value);
+    sizeValue.textContent = size;
+  });
+
+  // Premium color palette
+  const paletteColors = [
+    "#000000", "#FFFFFF", "#FF4757", "#2ED573", "#3742FA",
+    "#FFA502", "#FF6B9D", "#70A1FF", "#5352ED", "#FF3838",
+    "#4CAF50", "#2196F3", "#FF9800", "#9C27B0", "#607D8B",
+    "#E91E63", "#00BCD4", "#CDDC39", "#795548", "#FF5722"
   ];
-  const palette=document.getElementById('palette');
+  
+  const palette = document.getElementById('palette');
   paletteColors.forEach((c, index) => {
-    const sw=document.createElement('div');
-    sw.className='swatch'; 
-    sw.style.background=c;
-    if (index === 0) sw.classList.add('selected'); // Select red by default
-    sw.onclick=()=>{
-      // Remove selected from all swatches
+    const sw = document.createElement('div');
+    sw.className = 'swatch';
+    sw.style.background = c;
+    if (index === 10) sw.classList.add('selected'); // Green default
+    
+    sw.onclick = () => {
       palette.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
-      // Add selected to clicked swatch
       sw.classList.add('selected');
-      color=c;
+      color = c;
     };
     palette.appendChild(sw);
   });
 
-  // Stamp selector setup
-  const stampEmojis = [
-    '🌻', '🌸', '🌺', '🌷', '🌹', '🌼', '🌾',
-    '🦋', '🐝', '🐞', '🐛', '🐰', '🐸', '🐯',
-    '⭐', '🌟', '✨', '💫', '🌙', '☀️', '🌈',
-    '❤️', '💙', '💚', '💛', '💜', '🧡', '💖',
-    '🎈', '🎉', '🎊', '🎁', '🎂', '🍎', '🍌'
+  // Plants vs Zombies themed stamps
+  const pvzStampEmojis = [
+    // Plants
+    '🌻', '🌱', '🌿', '🪴', '🌵', '🌲', '🌳', '🥦',
+    '🥕', '🥒', '🍅', '🫛', '🧅', '🥬', '🌶️', '🥔',
+    
+    // Zombies & Spooky
+    '🧟', '💀', '👻', '🎃', '🦴', '🧠', '⚰️', '🔮',
+    
+    // Game Elements
+    '☀️', '💎', '⚡', '💥', '🌟', '💫', '🔥', '❄️',
+    '🌪️', '🌈', '⭐', '✨', '💯', '🎯', '🏆', '🎖️'
   ];
+  
+  const stampGrid = document.getElementById('stampGrid');
   const stampSelector = document.getElementById('stampSelector');
-  stampEmojis.forEach((emoji, index) => {
+  
+  // Create stamps grid
+  pvzStampEmojis.forEach((emoji, index) => {
     const stamp = document.createElement('div');
     stamp.className = 'stamp';
-    if (index === 0) stamp.classList.add('selected'); // Select first emoji by default
+    if (index === 0) stamp.classList.add('selected');
     stamp.textContent = emoji;
+    
     stamp.onclick = () => {
-      // Remove selected class from all stamps
-      stampSelector.querySelectorAll('.stamp').forEach(s => s.classList.remove('selected'));
-      // Add selected class to clicked stamp
+      stampGrid.querySelectorAll('.stamp').forEach(s => s.classList.remove('selected'));
       stamp.classList.add('selected');
-      // Set the stamp emoji
       stampEmoji = emoji;
     };
-    stampSelector.appendChild(stamp);
+    stampGrid.appendChild(stamp);
+  });
+  
+  // Move the stamps grid into the selector
+  stampSelector.appendChild(stampGrid);
+
+  // Resize handling
+  window.addEventListener('resize', () => {
+    setTimeout(resizeCanvas, 100);
+  });
+  
+  window.addEventListener('orientationchange', () => {
+    setTimeout(resizeCanvas, 200);
   });
 
-  // Initialize with brush tool
+  // Initialize
+  resizeCanvas();
   setTool('brush');
   render();
 })();
