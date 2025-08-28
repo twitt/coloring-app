@@ -188,14 +188,18 @@
     cursor: crosshair;
   }
   
+  #canvasContainer {
+    position: relative;
+    transform-origin: center center;
+  }
+  
   canvas { 
     background: white; 
     touch-action: none; 
     border-radius: var(--radius);
     box-shadow: var(--shadow-hover);
     transition: var(--transition);
-    transform-origin: center;
-    position: relative;
+    display: block;
   }
   
   canvas:hover {
@@ -805,7 +809,9 @@
 </div>
 
 <div id="canvasWrap">
-  <canvas id="paint"></canvas>
+  <div id="canvasContainer">
+    <canvas id="paint"></canvas>
+  </div>
   <!-- Desktop brush indicator -->
   <div class="brush-indicator" id="brushIndicator"></div>
   <!-- Mobile touch indicator -->
@@ -845,12 +851,13 @@
 
 <script>
 (() => {
-  // Canvas setup with zoom and pan functionality
+  // Canvas setup with simplified coordinate handling
   const canvas = document.getElementById('paint');
   const ctx = canvas.getContext('2d');
   const paintLayer = document.createElement('canvas');
   const lineLayer = document.createElement('canvas');
   const canvasWrap = document.getElementById('canvasWrap');
+  const canvasContainer = document.getElementById('canvasContainer');
   const brushIndicator = document.getElementById('brushIndicator');
   const touchIndicator = document.getElementById('touchIndicator');
   const panIndicator = document.getElementById('panIndicator');
@@ -886,8 +893,8 @@
     paintLayer.width = lineLayer.width = canvas.width;
     paintLayer.height = lineLayer.height = canvas.height;
     
-    // Apply zoom and pan transforms
-    canvas.style.transform = `scale(${zoom}) translate(${panX}px, ${panY}px)`;
+    // Apply zoom and pan transforms to container
+    canvasContainer.style.transform = `scale(${zoom}) translate(${panX}px, ${panY}px)`;
     
     render();
   }
@@ -947,21 +954,19 @@
     }, 2000);
   }
   
-  // Fixed coordinate calculation that properly accounts for zoom and pan
-  function toCanvasCoords(clientX, clientY) {
+  // SIMPLIFIED coordinate calculation - this will work exactly where you click
+  function getCanvasCoordinates(e) {
     const rect = canvas.getBoundingClientRect();
+    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
     
-    // Get the position relative to the canvas element
-    const x = clientX - rect.left;
-    const y = clientY - rect.top;
-    
-    // Calculate the actual canvas coordinates accounting for zoom and pan
-    const canvasX = (x / zoom - panX) * (canvas.width / (rect.width / zoom));
-    const canvasY = (y / zoom - panY) * (canvas.height / (rect.height / zoom));
+    // Simple direct mapping from screen to canvas
+    const x = (clientX - rect.left) * (canvas.width / rect.width);
+    const y = (clientY - rect.top) * (canvas.height / rect.height);
     
     return {
-      x: Math.round(canvasX),
-      y: Math.round(canvasY)
+      x: Math.round(x),
+      y: Math.round(y)
     };
   }
   
@@ -1069,32 +1074,32 @@
     ctx.drawImage(lineLayer, 0, 0);
   }
 
-  function beginStroke(x, y) {
+  function beginStroke(coords) {
     if (isPanning || isSpacePressed) return;
     
     if (tool === 'fill') {
       saveState();
-      floodFill(x, y, color);
+      floodFill(coords.x, coords.y, color);
       render();
       return;
     }
     if (tool === 'stamp') {
       saveState();
-      placeStamp(x, y);
+      placeStamp(coords.x, coords.y);
       render();
       return;
     }
     isDrawing = true;
-    last = { x, y };
+    last = coords;
     if (tool === 'brush' || tool === 'eraser') saveState();
   }
 
-  function moveStroke(x, y) {
+  function moveStroke(coords) {
     if (!isDrawing || isPanning) return;
     if (tool === 'brush' || tool === 'eraser') {
       const pctx = paintLayer.getContext('2d');
       pctx.lineJoin = pctx.lineCap = 'round';
-      pctx.lineWidth = size; // Use actual size, not divided by zoom
+      pctx.lineWidth = size;
       
       if (tool === 'eraser') {
         pctx.globalCompositeOperation = 'destination-out';
@@ -1105,9 +1110,9 @@
       
       pctx.beginPath();
       pctx.moveTo(last.x, last.y);
-      pctx.lineTo(x, y);
+      pctx.lineTo(coords.x, coords.y);
       pctx.stroke();
-      last = { x, y };
+      last = coords;
       render();
     }
   }
@@ -1208,7 +1213,7 @@
     lastPanX = clientX;
     lastPanY = clientY;
     
-    canvas.style.transform = `scale(${zoom}) translate(${panX}px, ${panY}px)`;
+    canvasContainer.style.transform = `scale(${zoom}) translate(${panX}px, ${panY}px)`;
   }
 
   function endPan() {
@@ -1238,9 +1243,10 @@
       }, 500);
     }
     
-    const pt = toCanvasCoords(clientX, clientY);
-    if (pt && !isPanning) {
-      beginStroke(pt.x, pt.y);
+    // Get canvas coordinates and start drawing
+    const coords = getCanvasCoordinates(e);
+    if (coords && !isPanning) {
+      beginStroke(coords);
       
       if (isTouch) {
         updateTouchIndicator(clientX, clientY, true, true);
@@ -1260,9 +1266,9 @@
       return;
     }
     
-    const pt = toCanvasCoords(clientX, clientY);
-    if (pt) {
-      moveStroke(pt.x, pt.y);
+    const coords = getCanvasCoordinates(e);
+    if (coords) {
+      moveStroke(coords);
       
       if (isTouch) {
         updateTouchIndicator(clientX, clientY, true, isDrawing);
@@ -1344,13 +1350,13 @@
   // Zoom controls
   document.getElementById('zoomIn').onclick = () => {
     zoom = Math.min(zoom * 1.2, 5);
-    canvas.style.transform = `scale(${zoom}) translate(${panX}px, ${panY}px)`;
+    canvasContainer.style.transform = `scale(${zoom}) translate(${panX}px, ${panY}px)`;
     updateZoomDisplay();
   };
 
   document.getElementById('zoomOut').onclick = () => {
     zoom = Math.max(zoom / 1.2, 0.1);
-    canvas.style.transform = `scale(${zoom}) translate(${panX}px, ${panY}px)`;
+    canvasContainer.style.transform = `scale(${zoom}) translate(${panX}px, ${panY}px)`;
     updateZoomDisplay();
   };
 
@@ -1358,7 +1364,7 @@
     zoom = 1;
     panX = 0;
     panY = 0;
-    canvas.style.transform = `scale(${zoom}) translate(${panX}px, ${panY}px)`;
+    canvasContainer.style.transform = `scale(${zoom}) translate(${panX}px, ${panY}px)`;
     updateZoomDisplay();
   };
 
@@ -1367,7 +1373,7 @@
     e.preventDefault();
     const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
     zoom = Math.max(0.1, Math.min(5, zoom * zoomFactor));
-    canvas.style.transform = `scale(${zoom}) translate(${panX}px, ${panY}px)`;
+    canvasContainer.style.transform = `scale(${zoom}) translate(${panX}px, ${panY}px)`;
     updateZoomDisplay();
   });
 
